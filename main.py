@@ -23,7 +23,7 @@ C_L_max_take_off_cur = 2.1 # [] Cl during take-off
 C_L_max_landing_cur = 2.4 # [] Cl during landing
 
 # Values from chosen airfoil SC(2)-0414
-C_l_max_airfoil = 1.528 # [] Cl of airfoil
+#C_l_max_airfoil = 1.528 # [] Cl of airfoil
 
 # Iterating on the design based on the initial given configuration until it converges
 for i in range(5):

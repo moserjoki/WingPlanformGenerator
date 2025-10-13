@@ -23,7 +23,7 @@ C_L_max_take_off_cur = 2.1 # [] Cl during take-off
 C_L_max_landing_cur = 2.4 # [] Cl during landing
 
 # Values from chosen airfoil SC(2)-0414
-#C_l_max_airfoil = 1.528 # [] Cl of airfoil
+C_l_max_airfoil = 1.528 # [] Cl of airfoil
 
 # Iterating on the design based on the initial given configuration until it converges
 for i in range(5):
@@ -35,6 +35,15 @@ for i in range(5):
  
 
 cruise_matching_diagram.plot()
+
+
+#FUSELAGE PARAMETERS:
+l_fus=52.43 #RANDOM INITIAL VALUE
+X_cg_aft=21.98 #RANDOM INITIAL VALUE
+
+wing.empenage_sizing(l_fus, X_cg_aft, True)
+
+
 
 # Wing fuel tank parameters
 xc_f1 = 0.2 # [] cord ratio from which onwards fuel is stored in the cross section 

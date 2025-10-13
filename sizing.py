@@ -502,7 +502,7 @@ class WingSizing:
         delta_a_up = 17
         f_differential_aileron = 0.75
         delta_a_down = delta_a_up*f_differential_aileron
-        delta_a = (1/2)*(delta_a_up + delta_a_down)
+        delta_a = (1/2)*(delta_a_up+delta_a_down)
 
         ρ_SL = 1.22522568 # [kg/m^3]
         
@@ -614,3 +614,51 @@ class WingSizing:
             volume += S_ref_chord*self.chord(bcur)**2*db
             bcur += db
         return volume
+    
+    def empenage_sizing(self, l_fus, X_cg_aft, printing):
+        #SELECTED CONSTANTS (all values were selected to be in the middle of
+        # acceptable range:
+        Vh = 1.01
+        Vv = 0.079
+        AR_v = 1.5
+        AR_h = 4
+        taper_v = 0.5
+        taper_h = 0.65
+
+        #VERTICAL TAIL:
+        #Leading edge sweep is equal to the wing leading edge sweep
+        Leading_Edge_Sweep_V=37.3 #COULD CHANGE
+        lv = 0.9*l_fus-X_cg_aft
+        S_v = (Vv*self.S_w*self.b)/lv
+        b_v = math.sqrt(AR_v*S_v)
+        c_r_v = 2*S_v/((1+taper_v)*b_v)
+        c_t_v = c_r_v*taper_v
+        MAC_v = 2/3*c_r_v*((1+taper_v+taper_v**2)/(1+taper_v))
+
+        #HORIZONTAL TAIL:
+        #equal to the wing quarter chord or higher (till 40 deg)
+        Quarter_Chord_Sweep_H = 34.21 #COULD CHANGE
+        lh = 0.9*l_fus-X_cg_aft
+        S_h = Vh*self.S_w*self.MAC/lh
+        b_h = math.sqrt(AR_h*S_h)
+        c_r_h = 2*S_h/((1+taper_h)*b_h)
+        c_t_h = c_r_h*taper_h
+        MAC_h = 2/3*c_r_h*((1+taper_h+taper_h**2)/(1+taper_h))
+
+        if printing:
+            print("VERTICAL TAIL:")
+            print("Moment arm:", round(lv,2))
+            print("Vertical Tail Area:", round(S_v,2))
+            print("Vertical Tail Span:", round(b_v,2))
+            print("Root Chord:", round(c_r_v,2))
+            print("Tip Chord:", round(c_t_v, 2))
+            print("MAC Vertical Tail:", round(MAC_v,2))
+            print("")
+            print("HORIZONTAL TAIL:")
+            print("Moment arm:", round(lh,2))
+            print("Horizontal Tail Area:",round(S_h,2))
+            print("Horizontal Tail Span:", round(b_h,2))
+            print("Root Chord:", round(c_r_h,2))
+            print("Tip Chord:", round(c_t_h,2))
+            print("MAC Horizontal Tail:", round(MAC_h,2))
+        return

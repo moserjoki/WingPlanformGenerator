@@ -3,18 +3,16 @@ import numpy as np
 from scipy.optimize import fsolve
 from scipy.optimize import root_scalar
 import matplotlib.pyplot as plt
+from params import *
+
 
 # ---------------------------
 # Airfoil Class
 # ---------------------------
 class Airfoil:
-    def __init__(self, filepath, c_l_alpha, c_d0, tau, c_l_max):
+    def __init__(self, filepath):
         self.filepath = filepath
         self.x, self.y, self.x_upper, self.y_upper, self.x_lower, self.y_lower = self._import_airfoil(filepath)
-        self.c_l_alpha = c_l_alpha
-        self.c_d0 = c_d0
-        self.tau = tau
-        self.c_l_max = c_l_max
 
     def _import_airfoil(self, filepath):
         x, y = [], []
@@ -91,8 +89,6 @@ class Airfoil:
 # Matching Diagram Class
 # ---------------------------
 class MatchingDiagram:
-    g = 9.81 # [m/s^2] gravitational acceleration
-
     WS_array = np.array([]) # [N/m^2]
     TW_cruise_speed_array = np.array([])
     TW_cruise_speed = 0 
@@ -113,7 +109,7 @@ class MatchingDiagram:
     WS_min_speed = 0
     WS_landing_field = 0
 
-    def __init__(self, m_MTOW, AR, V_cruise, M_cruise, ρ_cruise):
+    def __init__(self, m_MTOW, AR, M_cruise):
         self.m_MTOW = m_MTOW
         self.AR = AR
         self.V_cruise = V_cruise
@@ -296,7 +292,7 @@ class MatchingDiagram:
             p_t_TOFL = p_TOFL*(1+0.2*M_TOFL**2)**(1.4/0.4)
             δ_TOFL = p_t_TOFL/p_SL_ISA
             α_T_TOFL = δ_TOFL*(1-(0.43+0.014*B)*math.sqrt(M_TOFL))
-            TW_TOFL = (1/α_T_TOFL)*(1.15*math.sqrt(WS/(L_TOFL*k_T_TOFL*ρ_TOFL*self.g*math.pi*self.AR*e_TOFL))+4*h_2_TOFL/L_TOFL)
+            TW_TOFL = (1/α_T_TOFL)*(1.15*math.sqrt(WS/(L_TOFL*k_T_TOFL*ρ_TOFL*g*math.pi*self.AR*e_TOFL))+4*h_2_TOFL/L_TOFL)
             self.TW_TOFL_array = np.append(self.TW_TOFL_array, TW_TOFL)
 
             self.WS_array  = np.append(self.WS_array, WS) 
@@ -319,7 +315,7 @@ class MatchingDiagram:
 
 
         #OUTPUT
-        S_w = self.m_MTOW*self.g/self.WS_min
+        S_w = self.m_MTOW*g/self.WS_min
 
         print("WTO/SW:", round(self.WS_min, 4), "N/m^2")
         print("TWO/WTO:", round(self.TW_min, 4), "N/N")
@@ -358,9 +354,7 @@ class MatchingDiagram:
 # Wing Sizing Class
 # ---------------------------
 class WingSizing:
-    g = 9.81 # [m/s^2] gravitational acceleration
-
-    def __init__(self, m_MTOW, AR, V_cruise, M_cruise, ρ_cruise, airfoil: Airfoil):
+    def __init__(self, m_MTOW, AR, M_cruise):
         # Inputs
         self.m_MTOW = m_MTOW
         self.AR = AR
@@ -369,10 +363,10 @@ class WingSizing:
         self.ρ_cruise = ρ_cruise
 
         # Gather data from airfoil 
-        self.c_l_alpha = airfoil.c_l_alpha
-        self.c_d0 = airfoil.c_d0
-        self.tau = airfoil.tau
-        self.c_l_max = airfoil.c_l_max
+        self.c_l_alpha = airf_c_l_alpha
+        self.c_d0 = airf_c_d0
+        self.tau = airf_tau
+        self.c_l_max = airf_c_l_max
 
         # Wing planform parameters
         self.S_w = None
@@ -384,7 +378,7 @@ class WingSizing:
         self.taper_ratio = None
         self.MAC = None
         self.leading_sweep = None
-        self.quarter_sweep = None
+        self.quart_sweep = None
         self.trailing_sweep = None
         self.dihedral = None
         self.b1 = None
@@ -397,22 +391,18 @@ class WingSizing:
     def planform_sizing(self, S_w):
         self.S_w = S_w 
         self.b = math.sqrt(self.AR*self.S_w) # [m] wing span
-
-        # Given values
-        k_a = 0.935             # [] technology factor for all super critical airfoils
-        t_c_streamwise = 0.14   # [] t/c 
         M_DD = self.M_cruise + 0.02 # [] target drag divergence Mach number
         
-        C_L_des = 2*1.1*self.m_MTOW*self.g/(self.S_w*self.ρ_cruise*self.V_cruise**2) # []
+        C_L_des = 2*1.1*self.m_MTOW*g/(self.S_w*self.ρ_cruise*self.V_cruise**2) # []
 
         quart_sweep_prelim = math.degrees(math.acos(1.16/(self.M_cruise+0.5)))
 
-        M_DD_prelim = k_a/math.cos(math.radians(quart_sweep_prelim))-t_c_streamwise/math.cos(math.radians(quart_sweep_prelim))**2-C_L_des/(10*math.cos(math.radians(quart_sweep_prelim))**3)
+        M_DD_prelim = mdd_k_a/math.cos(math.radians(quart_sweep_prelim))-mdd_t_c_streamwise/math.cos(math.radians(quart_sweep_prelim))**2-C_L_des/(10*math.cos(math.radians(quart_sweep_prelim))**3)
        
         # Equation to solve:
         # M_DD = k_a/cos(x) - t_c/cos(x)^2 - C_L/(10*cos(x)^3)
         def equation(x):
-            return k_a / np.cos(x) - t_c_streamwise*np.cos(x) / np.cos(x)**2 - C_L_des / (10 * np.cos(x)**3) - M_DD
+            return mdd_k_a / np.cos(x) - mdd_t_c_streamwise*np.cos(x) / np.cos(x)**2 - C_L_des / (10 * np.cos(x)**3) - M_DD
 
         # Initial guess (in radians)
         x0 = 0.3   # ~17 degrees
@@ -485,20 +475,15 @@ class WingSizing:
     # Aileron sizing
     # ---------------------------
     def aileron_sizing(self, C_L_max_landing):
-        delta_a_up = 17
-        f_differential_aileron = 0.75
-        delta_a_down = delta_a_up*f_differential_aileron
-        delta_a = (1/2)*(delta_a_up+delta_a_down)
+        # Differential aileron
+        delta_a_down = ail_delta_a_up*ail_f_differential_aileron
+        delta_a = (1/2)*(ail_delta_a_up+delta_a_down)
 
-        ρ_SL = 1.22522568 # [kg/m^3]
-        
-        V_stall = math.sqrt(2*self.m_MTOW*self.g/(ρ_SL*C_L_max_landing*self.S_w)) # [m/s]
-        print(f"V_stall: {V_stall:0.3f}")
-        delta_bank_req = 60  # deg
-        delta_t_req = 7 # s
+        # Calculate maximum outboard aileron position based on percentage
+        self.b2 = ail_b2_percent*self.b/2
 
-        b2_percent = 0.75            # Most outward position of ailerons (not tip to minimize alerion reversal)
-        self.b2 = b2_percent * self.b / 2
+        # Calculate stall speed 
+        V_stall = math.sqrt(2*self.m_MTOW*g/(ρ_sea_level*C_L_max_landing*self.S_w)) # [m/s]
 
         # ---------------------------
         # FUNCTIONS
@@ -525,13 +510,14 @@ class WingSizing:
             C_l_delta_alpha = ((2*self.c_l_alpha*self.tau)/(self.S_w*self.b)) * integral_aileron_control(b1, self.b2)
             C_l_p = (-(4*(self.c_l_alpha+self.c_d0))/(self.S_w*self.b**2)) * integral_roll_damping(0, self.b/2)
             P = -(C_l_delta_alpha / C_l_p) * math.radians(delta_a) * (2*V_stall / self.b)
-            delta_t = math.radians(delta_bank_req) / P
+            delta_t = math.radians(ail_delta_bank_req) / P
 
-            if printing:
+            if printing:       
+                print(f"V_stall: {V_stall:0.3f}")
                 print(f"C_l_delta_alpha: {C_l_delta_alpha :0.3f} | C_l_p: {C_l_p:0.3f} ")
                 print(f"P: {P:0.3f} rad/s | {math.degrees(P):0.3f} °/s")
-                print(f"delta_t: {delta_t:0.3f} s (<= {delta_t_req} s) to turn delta_bank_req: {delta_bank_req} °")
-            return delta_t - delta_t_req  # we want this = 0
+                print(f"delta_t: {delta_t:0.3f} s (<= {ail_delta_t_req} s) to turn delta_bank_req: {ail_delta_bank_req} °")
+            return delta_t - ail_delta_t_req  # we want this = 0
 
         # ---------------------------
         # SOLVE FOR b1
@@ -542,51 +528,37 @@ class WingSizing:
             self.b1 = sol.root
         
         delta_t_from_b1(self.b1, True)
-        print(f"b2: {self.b2:0.4f} m | {b2_percent:0.4f}% of b/2 | b1: {self.b1:0.4f} m | {self.b1/(self.b/2):0.4f}% of b/2 | b2-b1: {(self.b2-self.b1):0.2f} m")
+
+        print(f"b2: {self.b2:0.4f} m | {ail_b2_percent:0.4f}% of b/2 | b1: {self.b1:0.4f} m | {self.b1/(self.b/2):0.4f}% of b/2 | b2-b1: {(self.b2-self.b1):0.2f} m")
         return
     
     # ---------------------------
     # Transforms airfoil c_l_max to wing C_L_max for clean configuration
     # ---------------------------
-    def DATCOM_C_L_max_clean(airfoil: Airfoil, C_L_C_l_max_ratio, delta_C_L_max):
-        C_L_max_airfoil = C_L_C_l_max_ratio*airfoil.c_l_max
-        C_L_max_clean =  C_L_max_airfoil + delta_C_L_max
+    def DATCOM_C_L_max_clean(self):
+        C_L_max_airfoil = datcom_C_L_C_l_max_ratio*airf_c_l_max
+        C_L_max_clean =  C_L_max_airfoil+datcom_delta_C_L_max
         return C_L_max_clean
 
     # ---------------------------
     # High-Lift Devices sizing
     # ---------------------------
     def HLD_sizing(self, C_L_max_clean):    
-        # Wing planform details: 
-        d_fuselage = 5.2
-
-        # Leading Edge Fraction Flapped Area:
-        S_wfLE_to_S = 0.8
-
         # Find the reference flapped area for TE devices
         S_wfTE_half = (self.c_root*self.b1-(self.c_root-self.c_tip)/(self.b)*(self.b1)**2)-(self.c_root*(d_fuselage/2)-(self.c_root-self.c_tip)/(self.b)*((d_fuselage/2))**2)
         S_wfTE_to_S = (2/(self.S_w))*S_wfTE_half
 
-        print(f"S_wfLE_to_S: {S_wfLE_to_S:0.2f} | S_wfTE_to_S: {S_wfTE_to_S:0.2f}")
+        # Find contribution of LE devices to delta_C_L
+        delta_C_L_LE = 0.9 * hld_delta_C_l_LE * hld_S_wfLE_to_S * math.cos(math.radians(self.leading_sweep))
+        delta_C_L_TE_take_off = 0.9 * hld_delta_C_l_TE_take_off * S_wfTE_to_S * math.cos(math.radians(self.trailing_sweep))
+        delta_C_l_TE_landing = 0.9 * hld_delta_C_l_TE_landing * S_wfTE_to_S * math.cos(math.radians(self.trailing_sweep))
 
-        # Lift coefficient of reference clean wing:
-        # Lift contribution of leading edge devices to delta_C_l:
-        delta_C_l_LE = 0.4
-        # Lift contribution of trailing edge devices to delta_C_l, as tuple (Take-off, Landing):
-        delta_C_l_TE = (1.88, 1.94)
+        # Find contributuion of TE devices to delta_C_L for (take-off and landing)
+        C_L_take_off = C_L_max_clean  + delta_C_L_LE + delta_C_L_TE_take_off 
+        C_L_landing = C_L_max_clean + delta_C_L_LE +  delta_C_l_TE_landing
 
-        ### Find contribution of LE devices to delta_C_L
-        delta_C_L_LE = 0.9 * delta_C_l_LE * S_wfLE_to_S * math.cos(math.radians(self.leading_sweep))
-
-        ### Find contributuion of TE devices to delta_C_L for (take-off and landing)
-        delta_C_L_TE = (0.9 * delta_C_l_TE[0] * S_wfTE_to_S * math.cos(math.radians(self.trailing_sweep)), 0.9 * delta_C_l_TE[1] * S_wfTE_to_S * math.cos(math.radians(self.trailing_sweep)))
-
-        delta_C_L = (C_L_max_clean  + delta_C_L_LE + delta_C_L_TE[0], C_L_max_clean + delta_C_L_LE + delta_C_L_TE[1])
-        print(f"C_L_max_clean: {C_L_max_clean:0.2f} | C_L_max_takeoff: {delta_C_L[0]:0.4f} | C_L_max_landing: {delta_C_L[1]:0.4f}")
-
-        return delta_C_L[0], delta_C_L[1]
+        return C_L_take_off, C_L_landing 
     
-
     # ---------------------------
     # Calculate Wing Volume
     # ---------------------------
@@ -598,35 +570,33 @@ class WingSizing:
             bcur += db
         return volume
     
-    def empenage_sizing(self, l_fus, X_cg_aft, printing):
-        #SELECTED CONSTANTS (all values were selected to be in the middle of
-        # acceptable range:
-        Vh = 1.01
-        Vv = 0.079
-        AR_v = 1.5
-        AR_h = 4
-        taper_v = 0.5
-        taper_h = 0.65
+    def empenage_sizing(self, X_cg_aft, printing):
+        # Leading edge sweep is equal to the wing leading edge sweep if it is not bigger than 50
+        if self.leading_sweep > 50:
+            Leading_Edge_Sweep_V = 50
+        else:         
+            Leading_Edge_Sweep_V = self.leading_edge
 
-        #VERTICAL TAIL:
-        #Leading edge sweep is equal to the wing leading edge sweep
-        Leading_Edge_Sweep_V=37.3 #COULD CHANGE
         lv = 0.9*l_fus-X_cg_aft
-        S_v = (Vv*self.S_w*self.b)/lv
-        b_v = math.sqrt(AR_v*S_v)
-        c_r_v = 2*S_v/((1+taper_v)*b_v)
-        c_t_v = c_r_v*taper_v
-        MAC_v = 2/3*c_r_v*((1+taper_v+taper_v**2)/(1+taper_v))
+        S_v = (empg_Vv*self.S_w*self.b)/lv
+        b_v = math.sqrt(empg_AR_v*S_v)
+        c_r_v = 2*S_v/((1+empg_taper_v)*b_v)
+        c_t_v = c_r_v*empg_taper_v
+        MAC_v = 2/3*c_r_v*((1+empg_taper_v+empg_taper_v**2)/(1+empg_taper_v))
 
         #HORIZONTAL TAIL:
-        #equal to the wing quarter chord or higher (till 40 deg)
-        Quarter_Chord_Sweep_H = 34.21 #COULD CHANGE
+        # Quarter chord sweep equal to the wing quarter chord or limited to 40
+        if self.quart_sweep > 40:
+            Quarter_Chord_Sweep_H = self.quart_sweep
+        else: 
+            Quarter_Chord_Sweep_H = 40
+
         lh = 0.9*l_fus-X_cg_aft
-        S_h = Vh*self.S_w*self.MAC/lh
-        b_h = math.sqrt(AR_h*S_h)
-        c_r_h = 2*S_h/((1+taper_h)*b_h)
-        c_t_h = c_r_h*taper_h
-        MAC_h = 2/3*c_r_h*((1+taper_h+taper_h**2)/(1+taper_h))
+        S_h = empg_Vh*self.S_w*self.MAC/lh
+        b_h = math.sqrt(empg_AR_h*S_h)
+        c_r_h = 2*S_h/((1+empg_taper_h)*b_h)
+        c_t_h = c_r_h*empg_taper_h
+        MAC_h = 2/3*c_r_h*((1+empg_taper_h+empg_taper_h**2)/(1+empg_taper_h))
 
         if printing:
             print("VERTICAL TAIL:")
@@ -644,4 +614,23 @@ class WingSizing:
             print("Root Chord:", round(c_r_h,2))
             print("Tip Chord:", round(c_t_h,2))
             print("MAC Horizontal Tail:", round(MAC_h,2))
+        return
+    
+    def fuel_volume(self, airfoil: Airfoil):
+        # Wing fuel tank volume determination
+        S_ref_chord = airfoil.cross_section(fuel_xc_1, fuel_xc_2, fuel_dxc, True)
+
+        b_f1 = (self.b/2)*fuel_b_f1
+        b_f2 = (self.b/2)*fuel_b_f2
+        b_l1 = (self.b/2)*fuel_b_l1
+        b_l2 = (self.b/2)*fuel_b_l1 + fuel_delta_l1_l2
+    
+        V_available_volume = self.volume_section(b_f1, b_f2, S_ref_chord, fuel_dbf)
+        V_landing_gear = self.volume_section(b_l1, b_l2, S_ref_chord, fuel_dbf) 
+
+        V_fuel_half_wing = V_available_volume - V_landing_gear 
+        V_fuel_total_wing = 2*V_fuel_half_wing
+
+        print(f"Cross Section: {S_ref_chord}")
+        print(f"Volume: {V_fuel_total_wing} m^3")
         return

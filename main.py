@@ -43,8 +43,6 @@ X_cg_aft=21.98 #RANDOM INITIAL VALUE
 
 wing.empenage_sizing(l_fus, X_cg_aft, True)
 
-
-
 # Wing fuel tank parameters
 xc_f1 = 0.2 # [] cord ratio from which onwards fuel is stored in the cross section 
 xc_f2 = 0.65 # [] cord ratio until which fuel is stored in the cross section

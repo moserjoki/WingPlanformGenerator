@@ -3,27 +3,18 @@ import numpy as np
 from scipy.optimize import fsolve
 from scipy.optimize import root_scalar
 import matplotlib.pyplot as plt
-#
-# ---------------------------
-# Flight Configuration
-# ---------------------------
-class FlightConfig:
-    def __init__(self, name):
-        self.name = name
-        # Example variables
-        self.C_L_max = None
-        self.C_D0 = None
-        self.e = None
-        self.rho = None
-        self.delta_C_L = None
 
 # ---------------------------
 # Airfoil Class
 # ---------------------------
 class Airfoil:
-    def __init__(self, filepath):
+    def __init__(self, filepath, c_l_alpha, c_d0, tau, c_l_max):
         self.filepath = filepath
         self.x, self.y, self.x_upper, self.y_upper, self.x_lower, self.y_lower = self._import_airfoil(filepath)
+        self.c_l_alpha = c_l_alpha
+        self.c_d0 = c_d0
+        self.tau = tau
+        self.c_l_max = c_l_max
 
     def _import_airfoil(self, filepath):
         x, y = [], []
@@ -369,7 +360,7 @@ class MatchingDiagram:
 class WingSizing:
     g = 9.81 # [m/s^2] gravitational acceleration
 
-    def __init__(self, m_MTOW, AR, V_cruise, M_cruise, ρ_cruise):
+    def __init__(self, m_MTOW, AR, V_cruise, M_cruise, ρ_cruise, airfoil: Airfoil):
         # Inputs
         self.m_MTOW = m_MTOW
         self.AR = AR
@@ -377,7 +368,13 @@ class WingSizing:
         self.M_cruise = M_cruise
         self.ρ_cruise = ρ_cruise
 
-        # Geometric outputs
+        # Gather data from airfoil 
+        self.c_l_alpha = airfoil.c_l_alpha
+        self.c_d0 = airfoil.c_d0
+        self.tau = airfoil.tau
+        self.c_l_max = airfoil.c_l_max
+
+        # Wing planform parameters
         self.S_w = None
         self.b = None
         self.X_LE = None
@@ -448,9 +445,6 @@ class WingSizing:
     # ---------------------------
     # Helper function
     # ---------------------------
-        # ---------------------------
-    # Planform calculations
-    # ---------------------------
     def leading_edge(self, y):
         return math.tan(math.radians(self.leading_sweep)) * y
 
@@ -491,14 +485,6 @@ class WingSizing:
     # Aileron sizing
     # ---------------------------
     def aileron_sizing(self, C_L_max_landing):
-        # ---------------------------
-        # INPUTS
-        # ---------------------------
-        # From airfoil SC(2)-0414
-        c_l_alpha = 6.6954 
-        c_d0 = 0.00551 
-        tau = 0.48 
-
         delta_a_up = 17
         f_differential_aileron = 0.75
         delta_a_down = delta_a_up*f_differential_aileron
@@ -536,8 +522,8 @@ class WingSizing:
             return sum_val
 
         def delta_t_from_b1(b1, printing):
-            C_l_delta_alpha = ((2*c_l_alpha*tau)/(self.S_w*self.b)) * integral_aileron_control(b1, self.b2)
-            C_l_p = (-(4*(c_l_alpha+c_d0))/(self.S_w*self.b**2)) * integral_roll_damping(0, self.b/2)
+            C_l_delta_alpha = ((2*self.c_l_alpha*self.tau)/(self.S_w*self.b)) * integral_aileron_control(b1, self.b2)
+            C_l_p = (-(4*(self.c_l_alpha+self.c_d0))/(self.S_w*self.b**2)) * integral_roll_damping(0, self.b/2)
             P = -(C_l_delta_alpha / C_l_p) * math.radians(delta_a) * (2*V_stall / self.b)
             delta_t = math.radians(delta_bank_req) / P
 
@@ -559,21 +545,18 @@ class WingSizing:
         print(f"b2: {self.b2:0.4f} m | {b2_percent:0.4f}% of b/2 | b1: {self.b1:0.4f} m | {self.b1/(self.b/2):0.4f}% of b/2 | b2-b1: {(self.b2-self.b1):0.2f} m")
         return
     
+    # ---------------------------
+    # Transforms airfoil c_l_max to wing C_L_max for clean configuration
+    # ---------------------------
+    def DATCOM_C_L_max_clean(airfoil: Airfoil, C_L_C_l_max_ratio, delta_C_L_max):
+        C_L_max_airfoil = C_L_C_l_max_ratio*airfoil.c_l_max
+        C_L_max_clean =  C_L_max_airfoil + delta_C_L_max
+        return C_L_max_clean
 
     # ---------------------------
     # High-Lift Devices sizing
     # ---------------------------
-    def HLD_sizing(self, C_l_max_airfoil):
-        C_l_max_airfoil = 1.528 # [] Cl during cruise         
-        C_L_C_l_max_ratio = 0.95 # [] !ITERATION | From graph for sweep angle 30° and 
-        C_L_max_airfoil = C_L_C_l_max_ratio*C_l_max_airfoil
-        
-        delta_C_L_max = 0 # [] From graph
-
-        C_L_max =  C_L_max_airfoil + delta_C_L_max
-
-        C_l_max_airfoil = C_L_max #[] Cl during cruise      
-
+    def HLD_sizing(self, C_L_max_clean):    
         # Wing planform details: 
         d_fuselage = 5.2
 
@@ -598,8 +581,8 @@ class WingSizing:
         ### Find contributuion of TE devices to delta_C_L for (take-off and landing)
         delta_C_L_TE = (0.9 * delta_C_l_TE[0] * S_wfTE_to_S * math.cos(math.radians(self.trailing_sweep)), 0.9 * delta_C_l_TE[1] * S_wfTE_to_S * math.cos(math.radians(self.trailing_sweep)))
 
-        delta_C_L = (C_l_max_airfoil + delta_C_L_LE + delta_C_L_TE[0], C_l_max_airfoil + delta_C_L_LE + delta_C_L_TE[1])
-        print(f"C_L_max_clean: {C_L_max :0.2f} | C_L_max_takeoff: {delta_C_L[0]:0.4f} | C_L_max_landing: {delta_C_L[1]:0.4f}")
+        delta_C_L = (C_L_max_clean  + delta_C_L_LE + delta_C_L_TE[0], C_L_max_clean + delta_C_L_LE + delta_C_L_TE[1])
+        print(f"C_L_max_clean: {C_L_max_clean:0.2f} | C_L_max_takeoff: {delta_C_L[0]:0.4f} | C_L_max_landing: {delta_C_L[1]:0.4f}")
 
         return delta_C_L[0], delta_C_L[1]
     

@@ -13,17 +13,23 @@ g = 9.81 # [m/s^2] gravitational constant
 ρ_cruise = 0.44 # [kg/m^3] density at cruise altitude 
 V_cr = 253 # [m/s] Cruise spseed 
 
+# Values from chosen airfoil SC(2)-0414
+c_l_alpha = 6.6954 # []
+c_d0 = 0.00551 # [] 
+tau = 0.48 # []
+c_l_max = 1.528 # [] 
+
 # Create objects used for subsequent calculations
-wing = WingSizing(m_MTOW, AR, V_cr, M_cruise, ρ_cruise)
+airfoil = Airfoil("airfoils/NASA SC(2)-0414.dat", c_l_alpha, c_d0, tau, c_l_max) 
+wing = WingSizing(m_MTOW, AR, V_cr, M_cruise, ρ_cruise, airfoil)
 cruise_matching_diagram = MatchingDiagram(m_MTOW, AR, V_cr, M_cruise, ρ_cruise)
-airfoil = Airfoil("airfoils/NASA SC(2)-0414.dat") 
+
 
 # Dummy values for first matching diagram calculation
 C_L_max_take_off_cur = 2.1 # [] Cl during take-off
 C_L_max_landing_cur = 2.4 # [] Cl during landing
 
-# Values from chosen airfoil SC(2)-0414
-C_l_max_airfoil = 1.528 # [] Cl of airfoil
+
 
 # Iterating on the design based on the initial given configuration until it converges
 for i in range(5):
@@ -31,9 +37,14 @@ for i in range(5):
     S_w_cur  = cruise_matching_diagram.compute(C_L_max_take_off_cur, C_L_max_landing_cur)
     wing.planform_sizing(S_w_cur)
     wing.aileron_sizing(C_L_max_landing_cur)
-    C_L_max_take_off_cur, C_L_max_landing_cur = wing.HLD_sizing(C_l_max_airfoil)
- 
 
+    # DATCOM methode 
+    C_L_C_l_max_ratio = 0.95 # [] From graph
+    delta_C_L_max = 0 # [] From graph
+    C_L_max_clean = wing.DATCOM_C_L_max_clean(airfoil, C_L_C_l_max_ratio, delta_C_L_max)
+
+    C_L_max_take_off_cur, C_L_max_landing_cur = wing.HLD_sizing(C_L_max_clean)
+ 
 cruise_matching_diagram.plot()
 
 

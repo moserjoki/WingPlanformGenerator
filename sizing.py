@@ -109,7 +109,7 @@ class MatchingDiagram:
     WS_min_speed = 0
     WS_landing_field = 0
 
-    def __init__(self, m_MTOW, AR, M_cruise):
+    def __init__(self, m_MTOW, AR):
         self.m_MTOW = m_MTOW
         self.AR = AR
         self.V_cruise = V_cruise
@@ -354,7 +354,7 @@ class MatchingDiagram:
 # Wing Sizing Class
 # ---------------------------
 class WingSizing:
-    def __init__(self, m_MTOW, AR, M_cruise):
+    def __init__(self, m_MTOW, AR):
         # Inputs
         self.m_MTOW = m_MTOW
         self.AR = AR
@@ -577,6 +577,8 @@ class WingSizing:
         else:         
             Leading_Edge_Sweep_V = self.leading_edge
 
+        
+
         lv = 0.9*l_fus-X_cg_aft
         S_v = (empg_Vv*self.S_w*self.b)/lv
         b_v = math.sqrt(empg_AR_v*S_v)
@@ -614,7 +616,7 @@ class WingSizing:
             print("Root Chord:", round(c_r_h,2))
             print("Tip Chord:", round(c_t_h,2))
             print("MAC Horizontal Tail:", round(MAC_h,2))
-        return
+        return b_v, c_r_v, c_t_v, MAC_v, b_h, c_r_h, c_t_h, MAC_h
     
     def fuel_volume(self, airfoil: Airfoil):
         # Wing fuel tank volume determination

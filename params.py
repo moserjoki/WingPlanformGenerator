@@ -7,6 +7,11 @@ M_cruise = 0.85 # []
 ρ_cruise = 0.44 # [kg/m^3] density at cruise altitude 
 V_cruise = 253 # [m/s] Cruise spseed 
 
+MDD = M_cruise + 0.02 # [] Mach Drag Divergence number 
+
+M_approach = 0.215 # []
+V_approach = 73 # [m/s] Approach speed
+
 # Atmospheric constants
 ρ_sea_level = 1.22522568 # [kg/m^3] Density at sea level
 
@@ -19,14 +24,28 @@ airf_c_l_alpha = 6.6954 # []
 airf_c_d0 = 0.00551 # [] 
 airf_tau = 0.48 # []
 airf_c_l_max = 1.528 # [] 
+airf_M_crit = 0.68 # []
+airf_t_c = 0.014 # []
+airf_x_c_max = 0.36 # []
+
+
 
 # General constants
 g = 9.81 # [m/s^2] gravitational acceleration
 
 # Fuselage Parameters
-d_fuselage = 5.2 # [m] Fuselage diameter 
-l_fus = 44.427 # [m] Fuselage length
+d_fuselage = 4.133 # [m] Fuselage diameter 
+l_fus = 44.427 # [m] Fuselage total length
+L1_fus = 8.266 # [m] Fuselage nose length
+L2_fus = 23.762 # [m] Fuselage cabin length
+L3_fus = 12.399 # [m] Fuselage tail cone length
 
+u_upsweep_deg = 5.0 # [°] Fuselage upsweep angle 
+A_max_fus = 13.416 # [m^2] Maximum fuselage cross-sectional area 
+A_base_fus = 0.39592 # [m^2] Fuselage base area 
+
+# Class II - Drag Estimation
+k = 0.634e-5 # [m] Skin roughness (same for all components) | Smooth paint
 
 # Mach Drag Divergence
 mdd_k_a = 0.935             # [] technology factor for all super critical airfoils

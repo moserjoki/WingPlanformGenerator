@@ -1,6 +1,7 @@
 #ZERO-LIFT DRAG COEFFICIENT
 
 from math import *
+import params as prm
 
 # === Atmospheric Properties ===
 def get_atmospheric_properties(flight_condition):
@@ -36,19 +37,25 @@ def get_atmospheric_properties(flight_condition):
         }
 
 # === Wetted Areas ===
-def Swet_wing(S_expW):
-    return 1.07 * 2 * S_expW
+def Swet_wing(b, c_tip, c_fuselage_intersect, d_fus):
+    S_expW = ((b-d_fus)/2)*(c_tip+c_fuselage_intersect)
+    S_wetW = 1.07 * 2 * S_expW
+    return S_wetW 
 
-def Swet_HT(S_expHT):
-    return 1.05 * 2 * S_expHT
+def Swet_HT(b_ht, c_tip_ht, c_root_ht):
+    S_expHT = (b_ht/2)*((c_tip_ht+c_root_ht)/2)
+    S_wetHT = 1.05 * 2 * S_expHT
+    return S_wetHT
 
-def Swet_VT(S_expVT):
-    return 1.05 * 2 * S_expVT
+def Swet_VT(b_vt, c_tip_vt, c_root_vt):
+    S_expVT = (b_vt)*((c_tip_vt+c_root_vt)/2)
+    S_wetVT = 1.05 * 2 * S_expVT
+    return S_wetVT
 
-def Swet_fus(d_fus, L1, L2, L3):
-    term1 = (1 / (3 * L1**2)) * ((4 * L1**2 + d_fus**2 / 4)**1.5 - d_fus**3 / 8)
-    term2 = -d_fus + 4 * L2 + 2 * sqrt(L3**2 + d_fus**2 / 4)
-    Swet = (pi * d_fus / 4) * (term1 + term2)
+def Swet_fus():
+    term1 = (1 / (3 * prm.L1_fus**2)) * ((4 * prm.L1_fus**2 + prm.d_fuselage**2/4)**1.5-prm.d_fuselage**3/8)
+    term2 = -prm.d_fuselage + 4 * prm.L2_fus + 2 * sqrt(prm.L3_fus**2 + prm.d_fuselage**2/4)
+    Swet = (pi*prm.d_fuselage/4) * (term1 + term2)
     return Swet
 
 # === Skin friction coefficients ===
@@ -289,252 +296,4 @@ def excrescence_leakage_drag(CD0_without_excrescence, excrescence_percentage=0.0
     """
     return CD0_without_excrescence * excrescence_percentage
 
-# === INPUT PARAMETERS FOR EACH COMPONENT ===
 
-# Flight conditions (same for all components)
-flight_condition = 'takeoff'  # 'takeoff' or 'cruise'
-
-# Get atmospheric properties based on flight condition
-atm_properties = get_atmospheric_properties(flight_condition)
-rho = atm_properties['rho']
-altitude = atm_properties['altitude']
-
-# Set appropriate velocities and Mach numbers based on flight condition
-if flight_condition == 'takeoff':
-    V = 80.0          # Takeoff velocity [m/s]
-    M = 0.23          # Takeoff Mach number
-    flow_regime = 'subsonic'
-    gear_deployed = True
-    flaps_deflected = True
-    flap_deflection_deg = 20.0  # Takeoff flap setting
-else:  # cruise
-    V = 230.0         # Cruise velocity [m/s]
-    M = 0.78          # Cruise Mach number
-    flow_regime = 'transonic'
-    gear_deployed = False
-    flaps_deflected = False
-    flap_deflection_deg = 0.0   # No flap deflection in cruise
-
-k = 1e-5         # Skin roughness [m] (same for all components)
-
-# Wave drag parameters
-M_cr = 0.75      # Critical Mach number
-M_DD = 0.82      # Drag divergence Mach number
-
-# Fuselage miscellaneous drag parameters
-u_upsweep_deg = 5.0     # Fuselage upsweep angle [degrees]
-A_max_fus = 2.5         # Maximum fuselage cross-sectional area [m²]
-A_base_fus = 0.8        # Fuselage base area [m²]
-
-# Landing gear parameters
-CD_gear = 0.015         # Constant drag coefficient for landing gear
-
-# Flap parameters (slotted flaps)
-c_f = 0.8               # Chord length of flap [m]
-c = 2.0                 # Wing chord length [m]
-S_flap = 10.0           # Wing area affected by flap [m²]
-
-# Excrescence and leakage parameters
-excrescence_percentage = 0.035  # 3.5% of total CD0 (2-5% range)
-
-# Geometry parameters for wetted areas
-S_expW = 15.0    # Exposed wing area [m²]
-S_expHT = 3.0    # Exposed horizontal tail area [m²]
-S_expVT = 2.0    # Exposed vertical tail area [m²]
-d_fus = 1.8      # Fuselage diameter [m]
-L1 = 5.0         # Forward fuselage length [m]
-L2 = 8.0         # Midsection length [m]
-L3 = 2.0         # Aft fuselage length [m]
-
-# Reference area
-S_ref = 15.0     # Reference wing area [m²]
-
-# Calculate wetted areas
-S_wet_wing = Swet_wing(S_expW)
-S_wet_HT = Swet_HT(S_expHT)
-S_wet_VT = Swet_VT(S_expVT)
-S_wet_fus = Swet_fus(d_fus, L1, L2, L3)
-
-# Component-specific parameters with interference factors and wetted areas
-components = {
-    'wing': {
-        'l': 2.0,           # Characteristic length [m] (mean aerodynamic chord)
-        'laminar_fraction': 0.1,   # 10% laminar flow on wing
-        'type': 'lifting_surface',
-        't_c': 0.12,        # Thickness to chord ratio
-        'x_c_max': 0.3,     # Location of max thickness
-        'Lambda_max_deg': 25.0,  # Sweep at max thickness [deg]
-        'IF': 1.05,  # Wing-fuselage interference
-        'wetted_area': S_wet_wing
-    },
-    'fuselage': {
-        'l': 15.0,          # Fuselage length [m]
-        'laminar_fraction': 0.02,  # 2% laminar flow on fuselage
-        'type': 'fuselage',
-        'A_max': A_max_fus, # Maximum cross-sectional area [m²]
-        'IF': 1.10,  # Fuselage base drag, protuberances
-        'wetted_area': S_wet_fus
-    },
-    'HT': {
-        'l': 1.2,           # Horizontal tail chord [m]
-        'laminar_fraction': 0.05,  # 5% laminar flow on HT
-        'type': 'lifting_surface', 
-        't_c': 0.10,        # Thickness to chord ratio
-        'x_c_max': 0.3,     # Location of max thickness
-        'Lambda_max_deg': 15.0,  # Sweep at max thickness [deg]
-        'IF': 1.10,  # Tail-fuselage interference
-        'wetted_area': S_wet_HT
-    },
-    'VT': {
-        'l': 1.5,           # Vertical tail chord [m]
-        'laminar_fraction': 0.05,  # 5% laminar flow on VT
-        'type': 'lifting_surface',
-        't_c': 0.10,        # Thickness to chord ratio
-        'x_c_max': 0.3,     # Location of max thickness
-        'Lambda_max_deg': 35.0,  # Sweep at max thickness [deg]
-        'IF': 1.10,  # Tail-fuselage interference
-        'wetted_area': S_wet_VT
-    }
-}
-
-# Print flight condition information
-print(f"FLIGHT CONDITION: {flight_condition.upper()}")
-print(f"Altitude: {altitude}")
-print(f"Air Density: {rho:.3f} kg/m³")
-print(f"Velocity: {V:.1f} m/s")
-print(f"Mach Number: {M:.2f}")
-print(f"Flow Regime: {flow_regime}")
-print("=" * 120)
-
-# Calculate skin friction for each component
-print("Component Drag Calculations:")
-print("=" * 120)
-print(f"{'Component':<12} {'Swet [m²]':<10} {'Cf':<8} {'FF':<8} {'IF':<8} {'Cf×FF×IF':<12} {'Cf×FF×IF×Swet':<15}")
-print("-" * 120)
-
-results = {}
-total_aircraft_drag_component = 0
-
-for component, params in components.items():
-    # Calculate skin friction
-    result = calculate_component_skin_friction(
-        rho, V, params['l'], k, M, flow_regime, params['laminar_fraction'], flight_condition
-    )
-    
-    # Calculate form factor based on component type
-    if params['type'] == 'lifting_surface':
-        FF = form_factor_lifting_surfaces(
-            params['t_c'], params['x_c_max'], M, params['Lambda_max_deg']
-        )
-    elif params['type'] == 'fuselage':
-        FF = form_factor_fuselage(params['l'], params['A_max'], result['Re_effective'])
-    else:
-        FF = 1.0  # Default form factor
-    
-    # Get interference factor and wetted area
-    IF = params['IF']
-    Swet = params['wetted_area']
-    
-    # Calculate final drag coefficient components
-    Cf_FF_IF = result['Cf_total'] * FF * IF
-    Cf_FF_IF_Swet = Cf_FF_IF * Swet
-    
-    # Accumulate total
-    total_aircraft_drag_component += Cf_FF_IF_Swet
-    
-    result['form_factor'] = FF
-    result['IF'] = IF
-    result['wetted_area'] = Swet
-    result['Cf_FF_IF'] = Cf_FF_IF
-    result['Cf_FF_IF_Swet'] = Cf_FF_IF_Swet
-    results[component] = result
-    
-    print(f"{component:<12} {Swet:<10.2f} {result['Cf_total']:<8.6f} {FF:<8.3f} {IF:<8.3f} {Cf_FF_IF:<12.6f} {Cf_FF_IF_Swet:<15.6f}")
-
-# Calculate wave drag
-CD_wave = wave_drag_coefficient(M, M_cr, M_DD)
-
-# Calculate fuselage miscellaneous drag
-CD_upsweep = fuselage_upsweep_drag(u_upsweep_deg, A_max_fus, S_ref)
-CD_base = fuselage_base_drag(M, A_base_fus, S_ref)
-
-# Calculate landing gear drag
-CD_landing_gear = landing_gear_drag(gear_deployed, CD_gear)
-
-# Calculate flap drag
-CD_flap = flap_drag(flaps_deflected, flap_deflection_deg, c_f, c, S_flap, S_ref)
-
-# Summary
-print("\n" + "=" * 120)
-print("SUMMARY:")
-print(f"{'Component':<12} {'Swet [m²]':<10} {'Cf':<8} {'FF':<8} {'IF':<8} {'Cf×FF×IF×Swet':<15}")
-print("-" * 70)
-for component in components:
-    print(f"{component:<12} {results[component]['wetted_area']:<10.2f} {results[component]['Cf_total']:<8.6f} {results[component]['form_factor']:<8.3f} {results[component]['IF']:<8.3f} {results[component]['Cf_FF_IF_Swet']:<15.6f}")
-
-print(f"\nTotal Aircraft Drag Component (sum of Cf × FF × IF × Swet): {total_aircraft_drag_component:.6f} m²")
-
-# Calculate equivalent flat plate drag area
-print(f"Equivalent Flat Plate Drag Area: {total_aircraft_drag_component:.6f} m²")
-
-# Calculate drag coefficient if reference area is provided
-CD0_friction = total_aircraft_drag_component / S_ref
-print(f"Friction Drag Coefficient (based on S_ref = {S_ref} m²): {CD0_friction:.6f}")
-
-# Add wave drag
-print(f"\nWave Drag:")
-print(f"Mach number: {M}")
-print(f"Critical Mach (M_cr): {M_cr}")
-print(f"Drag Divergence Mach (M_DD): {M_DD}")
-print(f"Wave Drag Coefficient (ΔCD_wave): {CD_wave:.6f}")
-
-# Add fuselage miscellaneous drag
-print(f"\nFuselage Miscellaneous Drag:")
-print(f"Upsweep angle: {u_upsweep_deg}°")
-print(f"Max cross-sectional area (A_max): {A_max_fus} m²")
-print(f"Base area (A_base): {A_base_fus} m²")
-print(f"Upsweep Drag Coefficient (CD_upsweep): {CD_upsweep:.6f}")
-print(f"Base Drag Coefficient (CD_base): {CD_base:.6f}")
-
-# Add landing gear drag
-print(f"\nLanding Gear Drag:")
-print(f"Landing gear deployed: {'YES' if gear_deployed else 'NO'}")
-if gear_deployed:
-    print(f"Landing Gear Drag Coefficient (CD_gear): {CD_landing_gear:.6f}")
-else:
-    print(f"Landing Gear Drag Coefficient: {CD_landing_gear:.6f} (gear retracted)")
-
-# Add flap drag
-print(f"\nFlap Drag:")
-print(f"Flaps deflected: {'YES' if flaps_deflected else 'NO'}")
-if flaps_deflected:
-    print(f"Flap deflection: {flap_deflection_deg}°")
-    print(f"Flap type: Slotted")
-    print(f"Flap chord ratio (c_f/c): {c_f/c:.3f}")
-    print(f"Flap area ratio (S_flap/S_ref): {S_flap/S_ref:.3f}")
-    print(f"Flap Drag Coefficient (CD_flap): {CD_flap:.6f}")
-else:
-    print(f"Flap Drag Coefficient: {CD_flap:.6f} (flaps retracted)")
-
-# Calculate CD0 without excrescence
-CD0_without_excrescence = CD0_friction + CD_wave + CD_upsweep + CD_base + CD_landing_gear + CD_flap
-
-# Calculate excrescence and leakage drag
-CD_excrescence = excrescence_leakage_drag(CD0_without_excrescence, excrescence_percentage)
-
-# Add excrescence and leakage drag
-print(f"\nExcrescence and Leakage Drag:")
-print(f"Excrescence percentage: {excrescence_percentage*100:.1f}% of total CD0")
-print(f"CD0 without excrescence: {CD0_without_excrescence:.6f}")
-print(f"Excrescence & Leakage Drag Coefficient (CD_excrescence): {CD_excrescence:.6f}")
-
-# Total zero-lift drag coefficient
-CD0_total = CD0_without_excrescence + CD_excrescence
-print(f"\nTotal Zero-Lift Drag Coefficient (CD0): {CD0_total:.6f}")
-print(f"  = Friction Drag ({CD0_friction:.6f})")
-print(f"  + Wave Drag ({CD_wave:.6f})")
-print(f"  + Upsweep Drag ({CD_upsweep:.6f})")
-print(f"  + Base Drag ({CD_base:.6f})")
-print(f"  + Landing Gear Drag ({CD_landing_gear:.6f})")
-print(f"  + Flap Drag ({CD_flap:.6f})")
-print(f"  + Excrescence & Leakage Drag ({CD_excrescence:.6f})")

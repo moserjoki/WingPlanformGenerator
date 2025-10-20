@@ -167,7 +167,7 @@ class MatchingDiagram:
         T_SL_ISA = 288.15 # [K]
         R = 287 # [J/(kg*K)] ideal gas constant air 
         γ = 1.4 # [] ratio of specific heats 
-        B = 8 # [] bypass ratio
+        B = 5.9 # [] bypass ratio
         c = 6.2 # [m/s] climb rate 
         beta_climb = 0.95 # [] mass fraction 
 

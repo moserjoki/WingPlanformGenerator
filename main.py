@@ -359,7 +359,10 @@ for j in range(6):
     m_OEW = sum(subsystem_values)*0.453592
     m_payload = 18960 # [kg]
     m_MTOW = (m_OEW + m_payload)*1.45932
+    m_fuel = m_MTOW - m_OEW - m_payload
+    V_fuel = m_fuel/800 # 800 → density kerosin [m^3]
 
     if j == 5:
         wing.fuel_volume(airfoil)
         wing.plot()
+        print(f"V needed: {V_fuel}")

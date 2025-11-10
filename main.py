@@ -332,7 +332,7 @@ for j in range(6):
         C_L_max_clean = wing.DATCOM_C_L_max_clean()
         C_L_max_take_off_cur, C_L_max_landing_cur = wing.HLD_sizing(C_L_max_clean)
     
-    #cruise_matching_diagram.plot()
+
 
     X_cg_aft = 21.98 #RANDOM INITIAL VALUE
 
@@ -351,8 +351,8 @@ for j in range(6):
     print(f"C_D0_landing_retracted: {C_D0_landing_retracted:0.3f} | C_D0_landing_extended {C_D0_landing_extended:0.3f} | C_D0_cruise: {C_D0_cruise:0.3f} | C_D0_take_off_retracted: {C_D0_take_off_retracted:0.3f} | C_D0_take_off_extended: {C_D0_take_off_extended:0.3f}")
     print(f"e_landing {e_landing:0.3f} | e_cruise {e_cruise:0.3f} | e_take_off {e_take_off:0.3f}")
 
-    Ywings = 0.4*l_fus
-    Yengine = 0.5*l_fus
+    Ywings = 0.55*l_fus
+    Yengine = 0.4*l_fus
     aileronsArea_SI = 4
     subsystem_values = getClassIIWeightEstimation(wing.AR, wing.quart_sweep, wing.taper_ratio, wing.b, wing.S_w, b_h, Ywings, Yengine, S_h, S_v, V_stall, aileronsArea_SI, Quarter_Chord_Sweep_H, Quarter_Chord_Sweep_V)
     
@@ -363,6 +363,7 @@ for j in range(6):
     V_fuel = m_fuel/800 # 800 → density kerosin [m^3]
 
     if j == 5:
+        cruise_matching_diagram.plot()
         wing.fuel_volume(airfoil)
         wing.plot()
         print(f"V needed: {V_fuel}")

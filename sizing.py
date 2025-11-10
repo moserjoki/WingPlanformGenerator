@@ -4,7 +4,7 @@ from scipy.optimize import fsolve
 from scipy.optimize import root_scalar
 import matplotlib.pyplot as plt
 from params import *
-
+from drag import *
 
 # ---------------------------
 # Airfoil Class
@@ -119,7 +119,8 @@ class MatchingDiagram:
         self.TW_min = None
         self.WS_min = None
 
-    def compute(self, C_L_max_takeoff, C_L_max_landing):
+    def compute(self, c_D0_landing_retracted, c_D0_landing_extended, c_D0_cruise, c_D0_take_off_retracted, c_D0_take_off_extended, 
+                e_landing, e_cruise, e_take_off, C_L_max_takeoff, C_L_max_landing):
 
         self.WS_array = np.array([]) # [N/m^2]
         self.TW_cruise_speed_array = np.array([])
@@ -141,7 +142,7 @@ class MatchingDiagram:
         self.WS_min_speed = 0
         self.WS_landing_field = 0
 
-        V_app = 73 # [m/s] Approach speed (chosen)
+        V_app = V_approach # [m/s] Approach speed (chosen)
         beta = 0.82 # [] Mass fraction 
 
         l_landing_field = 1981.2 # [m] length of landing field for landing req
@@ -156,8 +157,13 @@ class MatchingDiagram:
         # CRUISE SPEED REQUIREMENT 
         α_P = 0.228 # [] Power/thrust lapse 
         beta_cr = 0.95 # [] mass fraction for the cruise speed requirement 
-        c_D0 = 0.017 # [] zero lift drag coefficient 
-        e = 0.74 # [] oswald efficiency factor
+       
+       #PUT IN THESE VALUES
+     
+
+        deflection_TO=hld_deflection_take_off
+        deflection_LD=hld_deflection_land
+
 
         # CLIMB RATE REQUIREMENT 
         ρ_climb = 0.56 # [kg/m^3]
@@ -175,8 +181,8 @@ class MatchingDiagram:
         beta_cg119 = 1 # [] 
         ΔT_cg119 = 0 # [K]
         coverV_cg119 = 3.2 # [%] climb gradient c/V 
-        c_D0_cg119 = 0.084
-        e_cg119 = 0.86
+        c_D0_cg119 = c_D0_landing_extended+0.0013*deflection_LD
+        e_cg119 = e_landing+0.0026*deflection_LD
         T_cg119= 288.15  # [K]
         ρ_cg119 = 1.225  # [kg/m^3]
 
@@ -184,8 +190,8 @@ class MatchingDiagram:
         beta_cg121A = 1 # [] 
         ΔT_cg121A = 0 # [K]
         coverV_cg121A = 0 # [%] climb gradient c/V 
-        c_D0_cg121A = 0.058
-        e_cg121A = 0.81
+        c_D0_cg121A = c_D0_take_off_extended+0.0013*deflection_TO
+        e_cg121A = e_take_off+0.0026*deflection_TO
         T_cg121A = 288.15  # [K]
         ρ_cg121A = 1.225 # [kg/m^3]
 
@@ -193,8 +199,8 @@ class MatchingDiagram:
         beta_cg121B = 1 # [] 
         ΔT_cg121B = 0 # [K]
         coverV_cg121B = 2.4 # [%] climb gradient c/V 
-        c_D0_cg121B = 0.039
-        e_cg121B = 0.81
+        c_D0_cg121B = c_D0_take_off_retracted+0.0013*deflection_TO
+        e_cg121B = e_take_off+0.0026*deflection_TO
         T_cg121B = 288.15  # [K]
         ρ_cg121B  = 1.225 # [kg/m^3]
 
@@ -202,8 +208,8 @@ class MatchingDiagram:
         beta_cg121C = 1 # []
         ΔT_cg121C = 0 # [K]
         coverV_cg121C = 1.2 # [%] climb gradient c/V 
-        c_D0_cg121C = 0.019
-        e_cg121C = 0.77
+        c_D0_cg121C = c_D0_cruise
+        e_cg121C = e_cruise
         T_cg121C = 288.15  # [K]
         ρ_cg121C = 1.225 # [kg/m^3]
 
@@ -211,8 +217,8 @@ class MatchingDiagram:
         beta_cg121D = 0.84 # []
         ΔT_cg121D = 0 # [K]
         coverV_cg121D = 2.1 # [%] climb gradient c/V 
-        c_D0_cg121D = 0.065
-        e_cg121D = 0.86
+        c_D0_cg121D = c_D0_landing_retracted+0.0013*deflection_LD
+        e_cg121D = e_landing+0.0026*deflection_LD
         T_cg121D = 288.15  # [K]
         ρ_cg121D = 1.225 # [kg/m^3]
 
@@ -236,7 +242,7 @@ class MatchingDiagram:
         TW_TOFL = 0 
 
         while WS < WS_max:
-            TW_cruise_speed = ((beta_cr/α_P)*((c_D0*(1/2)*self.ρ_cruise*self.V_cruise**2)/(beta_cr*WS) + (beta_cr*WS)/(math.pi*self.AR*e*(1/2)*self.ρ_cruise*self.V_cruise**2)))
+            TW_cruise_speed = ((beta_cr/α_P)*((c_D0_cruise*(1/2)*self.ρ_cruise*self.V_cruise**2)/(beta_cr*WS) + (beta_cr*WS)/(math.pi*self.AR*e*(1/2)*self.ρ_cruise*self.V_cruise**2)))
             self.TW_cruise_speed_array = np.append(self.TW_cruise_speed_array, TW_cruise_speed)
 
             # CRUISE SPEED REQUIREMENT 
@@ -244,7 +250,7 @@ class MatchingDiagram:
             p_t_climb = p_climb*(1+0.2*M_climb**2)**(1.4/0.4)
             δ_t_climb = p_t_climb/p_SL_ISA
             α_T_climb = δ_t_climb*(1-(0.43+0.014*B)*math.sqrt(M_climb))
-            TW_climb = (beta_cr/α_T_climb)*(math.sqrt(((c**2)/(beta_climb*WS))*(ρ_climb/2)*math.sqrt(c_D0*math.pi*self.AR*e)) + 2*math.sqrt(c_D0/(math.pi*self.AR*e)))
+            TW_climb = (beta_cr/α_T_climb)*(math.sqrt(((c**2)/(beta_climb*WS))*(ρ_climb/2)*math.sqrt(c_D0_cruise*math.pi*self.AR*e)) + 2*math.sqrt(c_D0_cruise/(math.pi*self.AR*e)))
             self.TW_climb_array = np.append(self.TW_climb_array, TW_climb)
 
             # CLIMB GRADIENT 119

@@ -297,3 +297,32 @@ def excrescence_leakage_drag(CD0_without_excrescence, excrescence_percentage=0.0
     return CD0_without_excrescence * excrescence_percentage
 
 
+def oswald_efficiency(aspect_ratio, sweep_le_deg, flaps_deflected=False, flap_deflection_deg=0, wing_tip_effect=False):
+    """
+    Calculate Oswald efficiency factor (e) using Raymer DATCOM method.
+    """
+    effective_AR = aspect_ratio
+    if wing_tip_effect:
+        effective_AR += 0.04
+    
+    sweep_le_rad = radians(sweep_le_deg)
+    e = 4.61 * (1 - 0.045 * (effective_AR ** 0.68)) * (cos(sweep_le_rad) ** 0.15) - 3.1
+    
+    if flaps_deflected:
+        e += 0.0046 * flap_deflection_deg
+    
+    return e
+
+def calculate_K(aspect_ratio, e):
+    """
+    Calculate K factor = 1/(π * A * e)
+    """
+    return 1 / (pi * aspect_ratio * e)
+
+def drag_polar(CL, CDmin, CLminD, K):
+    """
+    Calculate drag coefficient using the formula:
+    CD = CDmin + K * (CL - CLminD)^2
+    """
+    return CDmin + K * (CL - CLminD)**2
+

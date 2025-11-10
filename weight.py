@@ -178,6 +178,8 @@ def getClassIIWeightEstimation(
     W_antiIce = 0.002*W_dg
 
     W_handling_gear = 0.0003 * W_dg 
+
+    W_engines = N_en * W_en
     
     # Ordered subsystem names and current-iteration values (list approach)
 
@@ -202,6 +204,7 @@ def getClassIIWeightEstimation(
         W_airConditioning,
         W_antiIce,
         W_handling_gear,
+        W_engines
     ]
     subsystem_names = [
                 "Wing",
@@ -224,6 +227,7 @@ def getClassIIWeightEstimation(
                 "Air Conditioning",
                 "Anti-Ice",
                 "Handling Gear",
+                "Engines"
     ]
     for i in range(len(subsystem_names)):
         print(subsystem_names[i], "Weight:", subsystem_values[i], " lb")
@@ -263,6 +267,7 @@ def plotWeightBreakdown(subsystem_names, subsystem_values):
                 "Air Conditioning",
                 "Anti-Ice",
                 "Handling Gear",
+                "Engines"
     ]
     #Create a bar chart to visualize the weight breakdown
     plt.figure(figsize=(12, 6))

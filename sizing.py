@@ -119,8 +119,12 @@ class MatchingDiagram:
         self.TW_min = None
         self.WS_min = None
 
+    def update(self, m_MTOW, AR):
+        self.m_MTOW = m_MTOW
+        self.AR = AR
+
     def compute(self, c_D0_landing_retracted, c_D0_landing_extended, c_D0_cruise, c_D0_take_off_retracted, c_D0_take_off_extended, 
-                e_landing, e_cruise, e_take_off, C_L_max_takeoff, C_L_max_landing):
+                e_landing, e_cruise, e_take_off, C_L_max_takeoff, C_L_max_landing, printing):
 
         self.WS_array = np.array([]) # [N/m^2]
         self.TW_cruise_speed_array = np.array([])
@@ -323,9 +327,10 @@ class MatchingDiagram:
         #OUTPUT
         S_w = self.m_MTOW*g/self.WS_min
 
-        print("WTO/SW:", round(self.WS_min, 4), "N/m^2")
-        print("TWO/WTO:", round(self.TW_min, 4), "N/N")
-        print("Wing area:", round(S_w, 4), "m^2")
+        if printing:
+            print("WTO/SW:", round(self.WS_min, 4), "N/m^2")
+            print("TWO/WTO:", round(self.TW_min, 4), "N/N")
+            print("Wing area:", round(S_w, 4), "m^2")
 
         return S_w
 
@@ -390,11 +395,13 @@ class WingSizing:
         self.b1 = None
         self.b2 = None
 
-
+    def update(self, m_MTOW, AR):
+        self.m_MTOW = m_MTOW
+        self.AR = AR
     # ---------------------------
     # Planform sizing
     # ---------------------------
-    def planform_sizing(self, S_w):
+    def planform_sizing(self, S_w, printing):
         self.S_w = S_w 
         self.b = math.sqrt(self.AR*self.S_w) # [m] wing span
         M_DD = self.M_cruise + 0.02 # [] target drag divergence Mach number
@@ -433,9 +440,10 @@ class WingSizing:
 
         AR_bound = 17.7*(2 - self.taper_ratio)*math.e**(-0.043*self.quart_sweep)
 
-        print(f"AR {self.AR:0.3f} <= AR_bound: {AR_bound:0.3f}")
-        print(f"b: {round(self.b, 4)} m | Λ_c/4: {round(self.quart_sweep,4)} ° | Λ_LE: {round(self.leading_sweep,4)} ° | Λ: {round(self.taper_ratio,4)} |  c_r: {round(self.c_root,4)} m | c_t: {round(self.c_tip,4)} m | dihedral: {self.dihedral:0.2f} °")
-        print(f"MAC: {round(self.MAC,4)} m | X_mac: {self.X_mac:0.3f} m | Y_mac: {self.Y_mac:0.3f} m")
+        if printing:
+            print(f"AR {self.AR:0.3f} <= AR_bound: {AR_bound:0.3f}")
+            print(f"b: {round(self.b, 4)} m | Λ_c/4: {round(self.quart_sweep,4)} ° | Λ_LE: {round(self.leading_sweep,4)} ° | Λ: {round(self.taper_ratio,4)} |  c_r: {round(self.c_root,4)} m | c_t: {round(self.c_tip,4)} m | dihedral: {self.dihedral:0.2f} °")
+            print(f"MAC: {round(self.MAC,4)} m | X_mac: {self.X_mac:0.3f} m | Y_mac: {self.Y_mac:0.3f} m")
         return
 
     # ---------------------------
@@ -480,7 +488,7 @@ class WingSizing:
     # ---------------------------
     # Aileron sizing
     # ---------------------------
-    def aileron_sizing(self, C_L_max_landing):
+    def aileron_sizing(self, C_L_max_landing, printing2):
         # Differential aileron
         delta_a_down = ail_delta_a_up*ail_f_differential_aileron
         delta_a = (1/2)*(ail_delta_a_up+delta_a_down)
@@ -533,10 +541,11 @@ class WingSizing:
         if sol.converged:
             self.b1 = sol.root
         
-        delta_t_from_b1(self.b1, True)
+        if printing2:
+            delta_t_from_b1(self.b1, True)
 
-        print(f"b2: {self.b2:0.4f} m | {ail_b2_percent:0.4f}% of b/2 | b1: {self.b1:0.4f} m | {self.b1/(self.b/2):0.4f}% of b/2 | b2-b1: {(self.b2-self.b1):0.2f} m")
-        return
+            print(f"b2: {self.b2:0.4f} m | {ail_b2_percent:0.4f}% of b/2 | b1: {self.b1:0.4f} m | {self.b1/(self.b/2):0.4f}% of b/2 | b2-b1: {(self.b2-self.b1):0.2f} m")
+        return V_stall
     
     # ---------------------------
     # Transforms airfoil c_l_max to wing C_L_max for clean configuration
@@ -563,7 +572,7 @@ class WingSizing:
         C_L_take_off = C_L_max_clean  + delta_C_L_LE + delta_C_L_TE_take_off 
         C_L_landing = C_L_max_clean + delta_C_L_LE +  delta_C_l_TE_landing
 
-        return C_L_take_off, C_L_landing 
+        return C_L_take_off, C_L_landing
     
     # ---------------------------
     # Calculate Wing Volume
@@ -578,12 +587,11 @@ class WingSizing:
     
     def empenage_sizing(self, X_cg_aft, printing):
         # Leading edge sweep is equal to the wing leading edge sweep if it is not bigger than 50
+        Leading_Edge_Sweep_V = 0
         if self.leading_sweep > 50:
             Leading_Edge_Sweep_V = 50
         else:         
-            Leading_Edge_Sweep_V = self.leading_edge
-
-        
+            Leading_Edge_Sweep_V = self.leading_sweep
 
         lv = 0.9*l_fus-X_cg_aft
         S_v = (empg_Vv*self.S_w*self.b)/lv
@@ -592,6 +600,9 @@ class WingSizing:
         c_t_v = c_r_v*empg_taper_v
         MAC_v = 2/3*c_r_v*((1+empg_taper_v+empg_taper_v**2)/(1+empg_taper_v))
 
+        Quarter_Chord_Sweep_V = np.atan(np.tan(np.deg2rad(Leading_Edge_Sweep_V)) - (c_r_v / (2 * b_v)) * (1 - empg_taper_v)
+)
+                                        
         #HORIZONTAL TAIL:
         # Quarter chord sweep equal to the wing quarter chord or limited to 40
         if self.quart_sweep > 40:
@@ -622,7 +633,7 @@ class WingSizing:
             print("Root Chord:", round(c_r_h,2))
             print("Tip Chord:", round(c_t_h,2))
             print("MAC Horizontal Tail:", round(MAC_h,2))
-        return b_v, c_r_v, c_t_v, MAC_v, b_h, c_r_h, c_t_h, MAC_h
+        return S_v, b_v, c_r_v, c_t_v, MAC_v, Quarter_Chord_Sweep_V, S_h, b_h, c_r_h, c_t_h, MAC_h, Quarter_Chord_Sweep_H
     
     def fuel_volume(self, airfoil: Airfoil):
         # Wing fuel tank volume determination

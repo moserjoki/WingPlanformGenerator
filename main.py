@@ -6,6 +6,7 @@ from scipy.optimize import fsolve
 from scipy.optimize import root_scalar
 from sizing import *
 from drag import *
+from weight import getClassIIWeightEstimation
 
 def C_D0_calculate(flight_condition, gear_deployed, printing):
     # Get atmospheric properties based on flight condition
@@ -311,16 +312,22 @@ S_w_cur = 0
 
 # Outer loop that takes into account updated m_MTOW and updated C_D0's and e's to rerun aircraft sizing. 
 for j in range(6):
+    print("\n\n\n")
+    print(f"Iteration {j+1}")
+    print(f"with m_MTOW: {m_MTOW:03f}")
+    wing.update(m_MTOW, AR)
+    cruise_matching_diagram.update(m_MTOW, AR)
 
     # Inner loop that runs the matching diagram to find S_w, then sizes ailerons and HLD's. Runs until C_L_max landing and take off that are required are matched by values that result from calcualtions. 
+    printing = False
     for i in range(5):
-        print("\n")
-        print(f"Iteration {i+1}")
+        if i == 4:
+            printing = True
 
         S_w_cur  = cruise_matching_diagram.compute(C_D0_landing_retracted, C_D0_landing_extended, C_D0_cruise, C_D0_take_off_retracted, C_D0_take_off_extended, 
-                                                e_landing, e_cruise, e_take_off, C_L_max_take_off_cur, C_L_max_landing_cur)
-        wing.planform_sizing(S_w_cur)
-        wing.aileron_sizing(C_L_max_landing_cur)
+                                                e_landing, e_cruise, e_take_off, C_L_max_take_off_cur, C_L_max_landing_cur, printing)
+        wing.planform_sizing(S_w_cur, printing)
+        V_stall = wing.aileron_sizing(C_L_max_landing_cur, printing)
 
         C_L_max_clean = wing.DATCOM_C_L_max_clean()
         C_L_max_take_off_cur, C_L_max_landing_cur = wing.HLD_sizing(C_L_max_clean)
@@ -329,9 +336,7 @@ for j in range(6):
 
     X_cg_aft = 21.98 #RANDOM INITIAL VALUE
 
-    b_v, c_r_v, c_t_v, MAC_v, b_h, c_r_h, c_t_h, MAC_h = wing.empenage_sizing(X_cg_aft, True)
-    #wing.fuel_volume(airfoil)
-    #wing.plot()
+    S_v, b_v, c_r_v, c_t_v, MAC_v, Quarter_Chord_Sweep_V, S_h, b_h, c_r_h, c_t_h, MAC_h, Quarter_Chord_Sweep_H = wing.empenage_sizing(X_cg_aft, True)
 
     C_D0_landing_retracted = C_D0_calculate('landing', False, False)
     C_D0_landing_extended = C_D0_calculate('landing', True, False)
@@ -345,3 +350,16 @@ for j in range(6):
 
     print(f"C_D0_landing_retracted: {C_D0_landing_retracted:0.3f} | C_D0_landing_extended {C_D0_landing_extended:0.3f} | C_D0_cruise: {C_D0_cruise:0.3f} | C_D0_take_off_retracted: {C_D0_take_off_retracted:0.3f} | C_D0_take_off_extended: {C_D0_take_off_extended:0.3f}")
     print(f"e_landing {e_landing:0.3f} | e_cruise {e_cruise:0.3f} | e_take_off {e_take_off:0.3f}")
+
+    Ywings = 0.4*l_fus
+    Yengine = 0.5*l_fus
+    aileronsArea_SI = 4
+    subsystem_values = getClassIIWeightEstimation(wing.AR, wing.quart_sweep, wing.taper_ratio, wing.b, wing.S_w, b_h, Ywings, Yengine, S_h, S_v, V_stall, aileronsArea_SI, Quarter_Chord_Sweep_H, Quarter_Chord_Sweep_V)
+    
+    m_OEW = sum(subsystem_values)*0.453592
+    m_payload = 18960 # [kg]
+    m_MTOW = (m_OEW + m_payload)*1.45932
+
+    if j == 5:
+        wing.fuel_volume(airfoil)
+        wing.plot()

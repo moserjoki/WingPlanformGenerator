@@ -7,6 +7,7 @@ from scipy.optimize import root_scalar
 from sizing import *
 from drag import *
 from weight import getClassIIWeightEstimation
+from weight import getClassIMTOW
 
 def C_D0_calculate(flight_condition, gear_deployed, printing):
     # Get atmospheric properties based on flight condition
@@ -354,11 +355,11 @@ for j in range(6):
     Ywings = 0.55*l_fus
     Yengine = 0.4*l_fus
     aileronsArea_SI = 4
-    subsystem_values = getClassIIWeightEstimation(wing.AR, wing.quart_sweep, wing.taper_ratio, wing.b, wing.S_w, b_h, Ywings, Yengine, S_h, S_v, V_stall, aileronsArea_SI, Quarter_Chord_Sweep_H, Quarter_Chord_Sweep_V)
+    subsystem_values = getClassIIWeightEstimation(wing.AR, wing.quart_sweep, wing.taper_ratio, wing.b, wing.S_w, b_h, Ywings, Yengine, S_h, S_v, V_stall, aileronsArea_SI, Quarter_Chord_Sweep_H, Quarter_Chord_Sweep_V, m_MTOW)[3]
     
     m_OEW = sum(subsystem_values)*0.453592
     m_payload = 18960 # [kg]
-    m_MTOW = (m_OEW + m_payload)*1.45932
+    m_MTOW = getClassIMTOW(LiftDragRatio=17, OEM_kg=m_OEW)
     m_fuel = m_MTOW - m_OEW - m_payload
     V_fuel = m_fuel/800 # 800 → density kerosin [m^3]
 

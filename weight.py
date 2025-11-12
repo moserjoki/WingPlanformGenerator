@@ -48,8 +48,7 @@ S_n = 242.162246       # nacelle wetted area, [ft^2]
 
 R_kva = 55  # system electrocal rating, typical values for cargo aircrafts
 t_c_root = 0.122     # based on chosen airfoil
-V_i = 11346.19      # integral tanks volume, [gal]
-V_t = 11346.19      # total fuel volume, [gal]
+
 V_p = 0     # self-sealing "protected" tanks volume, [gal], apparently only military aircraft
 W_APUUninstalled = 280 # [lb]
 # Honeywell HGT1700, APU used in Airbus A350
@@ -57,7 +56,7 @@ W_c = 8289.38106     # Maximum cargo weight, [lb]
 #The average mass per passenger including luggage was given as 98.8kg, I assumed 20kg of it to be the luggage(cargo) mass per passenger
 #Therefore total maximum cargo weight is 188 * 20kg = 8289lbs
 W_en = 7299.946425     # engine weight, each, [lb]
-W_fw = 75750.833     # weight of fuel in wing, [lb]
+
 W_uav = 1200    # uninstalled avionics weight, [lb]
 
 
@@ -79,9 +78,12 @@ def getClassIIWeightEstimation(
 
         aileronsArea_SI, 
         Quarter_Chord_Sweep_H, 
-        Quarter_Chord_Sweep_V
+        Quarter_Chord_Sweep_V,
+
+        MTOW_initial_SI
         ):
 ### Input parameters ###
+    fuel_volume_initial_SI = (MTOW_initial_SI/1.459328551*0.459328551)/800
     A=  aspectRatio  # aspect ratio [-]
     B_w = wingSpan_SI*3.2808399     # wing span, [ft]
     B_h = horizontalTailSpan_SI*3.2808399    # horizontal tail span, [ft]
@@ -97,14 +99,18 @@ def getClassIIWeightEstimation(
     
     
 
-    S_f = (prm.l_fus)*(prm.d_fuselage)*np.pi*10.7639      # Fuselage wetted area, [ft^2]
+    S_f = 4848.17289     # Fuselage wetted area, [ft^2]
     S_ht =  HorizontalTail_area*10.7639104   # Horizontal tail area, [ft^2]
     S_vt =  VerticalTail_area*10.7639104  # Vertical tail area, [ft^2]
     S_w= wingArea_SI*10.7639104      #trapezoidal wing area, [ft^2]
+    print("Wing area ft2:", S_w, "Horizontal tail area ft2:", S_ht, "Vertical tail area ft2:", S_vt)
 
     V_stall =    V_Stall *3.28084  # Stall speed, [ft/s]
 
-    W_l = 0.84*253443      # Landing design gross weight, [lb]
+    V_i = fuel_volume_initial_SI*264.172052    # integral tanks volume, [gal]
+    V_t = V_i   # total fuel volume, [gal]
+
+    W_l = 0.84*MTOW_initial_SI*2.20462262   # Landing design gross weight, [lb]
 
     Lambda = sweepWings      # wing sweep at 1/4 (25%) MAC [deg]
     lambda_ = taperWings     # Taper ratio [-]
@@ -117,10 +123,10 @@ def getClassIIWeightEstimation(
     F_w = (prm.l_fus-YhorizontalTail)/(prm.L3_fus)*prm.d_fuselage*3.2808399 # Fuselage width at horizontal tail intersection, [ft]
     K_y = 0.3*L_t      #aircraft pitching radius of gyration, [ft] (approx 0.3 L_t)
     K_z = 1*L_t        # Aircraft Yawing radius of gyration, [ft] (approx L_t)
-    W_dg= 253443   # Design gross weight, [lb]
-    I_y = 1800000 #W_dg*K_z**2 # yawing moment of inertia [lb ft^2]
-    #calculation based on the approximate radius of gyration
-    L_ec = Yengine * 3.2808399      # length from engine front to cockpit (total if multiengine), [ft]
+    W_dg= MTOW_initial_SI*2.20462262   # Design gross weight, [lb]
+    I_y = 1800000 # yawing moment of inertia [lb ft^2]
+    #based on reference aircraft data given by Comet
+    L_ec = Yengine * 1.5 * 2      # length from engine front to cockpit (total if multiengine), [ft]
     S_e = 0.25*S_ht      #elevator area, [ft^2]
     #approximated as 25% of horizontal tail area
     W_ec = 2.331*W_en**0.901*K_p*K_tr     # weight of engine and contents, (per nacelle), [lb]
@@ -131,7 +137,9 @@ def getClassIIWeightEstimation(
     V_pr =  0.95*(prm.l_fus)*(prm.d_fuselage/2)**2*np.pi*35.3146667     # volume of pressurized section [ft^3]
     #approximated as the volume of a cylinder with length equal to the fuselage length and diameter equal to the fuselage diameter, with 0.95
 
-  
+    W_fw = fuel_volume_initial_SI*800*2.20462262   # weight of fuel in wing, [lb]
+    #Only if all fuel can be stored in the wings, should be checked
+
     # Result of Class I weight estimation
 
     S_csw =  aileronsArea_SI*10.7639104   # control surface area (wing-mounted), [ft^2]
@@ -165,13 +173,13 @@ def getClassIIWeightEstimation(
 
     W_instruments = 4.509 * K_r * K_tp * N_c**0.541 * N_en * (L_f + B_w)**0.5
 
-    W_hydraulics = 0.2673 * 0.2673 * N_f * (L_f + B_w)**0.937
+    W_hydraulics = 0.2673 * N_f * (L_f + B_w)**0.937
 
     W_electrical = 7.291 * R_kva**0.782 * L_a**0.346 * N_gen**0.10
 
     W_avionics = 1.73 * W_uav**0.983
 
-    W_furnishings = 0.0577*N_c**0.1*W_c**0.393*S_f**0.75
+    W_furnishings = 0.0577*N_c**0.1 * W_c**0.393 * S_f**0.75
 
     W_airConditioning = 62.36*N_p**0.25*(V_pr/1000)**0.604*W_uav**0.10
 
@@ -232,6 +240,11 @@ def getClassIIWeightEstimation(
     for i in range(len(subsystem_names)):
         print(subsystem_names[i], "Weight:", subsystem_values[i], " lb")
 
+    OEM = sum(subsystem_values)
+    OEM_SI = OEM * 0.45359237  # Convert to kg
+    MTOW_SI = (OEM_SI+18960)*1.459328551 #Convert to MTOW using the fuel mass fraction obtained from the Breguet range equation for jet aircraft
+    fuel_mass_SI = MTOW_SI - OEM_SI - 18960 
+
     #Create a bar chart to visualize the weight breakdown
     plt.figure(figsize=(12, 6))
     plt.bar(subsystem_names, subsystem_values)
@@ -242,7 +255,7 @@ def getClassIIWeightEstimation(
     plt.tight_layout()
     plt.show()
     
-    return subsystem_values
+    return OEM_SI, MTOW_SI, fuel_mass_SI, subsystem_values
 
 
 def plotWeightBreakdown(subsystem_names, subsystem_values):
@@ -279,3 +292,18 @@ def plotWeightBreakdown(subsystem_names, subsystem_values):
     plt.tight_layout()
     plt.show()
     
+
+
+def getClassIMTOW(LiftDragRatio, OEM_kg):
+    equivalentRange_lst = [11867, 14147, 15177] #[km]
+    payload_lst = [18960, 8531, 0]
+    MTOW_lst = [] 
+    for i in range(3):
+        flightMassFraction = np.exp(equivalentRange_lst[i]*1000/(0.7*LiftDragRatio*(4.4*10**7/9.81)))
+        print("For a range of", equivalentRange_lst[i], "km, the flight mass fraction is:", flightMassFraction)
+        MTOW = (OEM_kg+payload_lst[i])*flightMassFraction
+
+        MTOW_lst.append(MTOW)
+    MTOW = max(MTOW_lst)
+    return MTOW
+

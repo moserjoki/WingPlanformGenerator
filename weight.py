@@ -316,7 +316,8 @@ def plotWeightBreakdown(subsystem_values_lb):
     plt.legend()
     plt.show()
 
-    plt.erase()
+    plt.figure(figsize=(8, 8))
+    plt.(np.ara)
     
 def getClassIMTOW(LiftDragRatio, OEM_kg):
     bypassRatio = 6.0 # PW2040D value

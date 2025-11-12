@@ -12,6 +12,10 @@ MDD = M_cruise + 0.02 # [] Mach Drag Divergence number
 M_approach = 0.215 # []
 V_approach = 73 # [m/s] Approach speed
 
+m_payload = 18960 # [kg]
+lb_to_kg = 0.453592 # [kg/lb]
+ρ_kerosin = 800 # [kg/m^3]
+
 # Atmospheric constants
 ρ_sea_level = 1.22522568 # [kg/m^3] Density at sea level
 

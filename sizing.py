@@ -601,8 +601,10 @@ class WingSizing:
         c_t_v = c_r_v*empg_taper_v
         MAC_v = 2/3*c_r_v*((1+empg_taper_v+empg_taper_v**2)/(1+empg_taper_v))
 
-        Quarter_Chord_Sweep_V = np.atan(np.tan(np.deg2rad(Leading_Edge_Sweep_V)) - (c_r_v / (2 * b_v)) * (1 - empg_taper_v)
-)
+        X_mac_v = 2*b_v/6*(1+2*empg_taper_v)/(1+empg_taper_v)  # [] multiplied by two because its is just half the span
+        Y_mac_v = X_mac_v*math.tan(math.radians(Leading_Edge_Sweep_V))
+        
+        Quarter_Chord_Sweep_V = np.atan(np.tan(np.deg2rad(Leading_Edge_Sweep_V)) - (c_r_v / (2 * b_v)) * (1 - empg_taper_v))
                                         
         #HORIZONTAL TAIL:
         # Quarter chord sweep equal to the wing quarter chord or limited to 40
@@ -617,6 +619,10 @@ class WingSizing:
         c_r_h = 2*S_h/((1+empg_taper_h)*b_h)
         c_t_h = c_r_h*empg_taper_h
         MAC_h = 2/3*c_r_h*((1+empg_taper_h+empg_taper_h**2)/(1+empg_taper_h))
+        Leading_Edge_Sweep_H = math.degrees(math.atan(math.tan(math.radians(self.quart_sweep))-(self.c_root/(2*self.b))*(self.taper_ratio-1)))
+        
+        X_mac_h = b_h/6*(1+2*empg_taper_h)/(1+empg_taper_h)  # [] multiplied by two because its is just half the span
+        Y_mac_h = X_mac_h*math.tan(math.radians(Leading_Edge_Sweep_H))
 
         if printing:
             print("VERTICAL TAIL:")
@@ -626,6 +632,7 @@ class WingSizing:
             print("Root Chord:", round(c_r_v,2))
             print("Tip Chord:", round(c_t_v, 2))
             print("MAC Vertical Tail:", round(MAC_v,2))
+            print(f"X_mac_v: {X_mac_v:0.2f} m | Y_mac_v: {Y_mac_v:0.2f} m")
             print("")
             print("HORIZONTAL TAIL:")
             print("Moment arm:", round(lh,2))
@@ -634,6 +641,7 @@ class WingSizing:
             print("Root Chord:", round(c_r_h,2))
             print("Tip Chord:", round(c_t_h,2))
             print("MAC Horizontal Tail:", round(MAC_h,2))
+            print(f"X_mac_h: {X_mac_h:0.2f} m | Y_mac_h: {Y_mac_h:0.2f} m")
         return S_v, b_v, c_r_v, c_t_v, MAC_v, Quarter_Chord_Sweep_V, S_h, b_h, c_r_h, c_t_h, MAC_h, Quarter_Chord_Sweep_H
     
     def fuel_volume(self, airfoil: Airfoil):

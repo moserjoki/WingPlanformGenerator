@@ -67,8 +67,8 @@ hld_S_wfLE_to_S = 0.8 # [] Leading Edge Fraction Flapped Area:
 hld_delta_C_l_LE = 0.4 # !G [] Slat
 hld_delta_C_l_TE_take_off = 1.88 # !G [] Single slotted Fowler flap 
 hld_delta_C_l_TE_landing = 1.94 # !G [] Single slotted Fowler flap 
-hld_deflection_take_off = 15
-hld_deflection_land = 40
+hld_deflection_take_off = 15 # [°]
+hld_deflection_land = 40 # [°]
 
 # Empenage Parameters
 # Selected components. All values were selected to be in the middle of acceptable range:

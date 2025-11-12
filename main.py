@@ -343,7 +343,10 @@ while True:
 
         C_L_max_clean = wing.DATCOM_C_L_max_clean()
         C_L_max_take_off_cur, C_L_max_landing_cur = wing.HLD_sizing(C_L_max_clean)
-    
+
+        if printing:
+            print(f"C_L_max_take_off_cur: {C_L_max_take_off_cur:0.3f}")
+            print(f"C_L_max_landing_cur: {C_L_max_landing_cur:0.3f}")
 
     X_cg_aft = 20.7456 # [m] from X CG aft calculation
 
@@ -378,6 +381,7 @@ while True:
     # Calculate drag at C_L design
     k_cruise = calculate_K(AR, e_cruise)
     C_D_cruise = C_D0_cruise + k_cruise*C_L_des**2
+    print(f"k_cruise: {k_cruise:0.4f}")
     print(f"C_D0_cruise: {C_D0_cruise:0.4f}")
     print(f"C_D_cruise: {C_D_cruise:0.4f}")
     Lift_over_Drag = C_L_des/C_D_cruise
@@ -388,9 +392,10 @@ while True:
     percentage_MTOW = np.abs((m_MTOW-m_MTOW_prev)/m_MTOW_prev)
     print(f"percentage_MTOW: {percentage_MTOW}")
     m_fuel = m_MTOW - m_OEW - m_payload
+    print(f"m_fuel: {m_fuel}")
     V_fuel = m_fuel/ρ_kerosin
 
-    if percentage_MTOW < 0.01:
+    if percentage_MTOW < 0.0005:
         break
 
 plotWeightBreakdown(subsystem_values_lst, m_MTOW_lst)

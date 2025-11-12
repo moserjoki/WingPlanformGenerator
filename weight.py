@@ -166,7 +166,7 @@ def getClassIIWeightEstimation(
 
     W_fuelSystem = 2.405 * V_t**0.606 * (1 + V_i/V_t)**(-1) * (1 + V_p/V_t) * N_t**0.5
 
-    W_flightControls = 145.9 * N_f**0.554 * (1 + N_m/N_f)**(-1) * S_cs**0.20 * (I_y * 10**(-6))*0.07
+    W_flightControls = 145.9 * N_f**0.554 * (1 + N_m/N_f)**(-1) * S_cs**0.20 * (I_y * 10**(-6))**0.70
 
     W_APUInstalled = 2.2 * W_APUUninstalled 
 
@@ -186,7 +186,14 @@ def getClassIIWeightEstimation(
 
     W_handling_gear = 0.0003 * W_dg 
 
+    # Miscallaneous weights not accounted by Raymer
+    W_cabinFurnishings = 28*(N_p+N_c-3) + 5000 # simplified estimation of cabin furnishings weight
+    W_lavatoriesGalleys = 2*300 + 4* 600 # 2 lavatories at 300 lb each, 4 galleys at 600 lb each
+    W_minimumFluids = 300 + 600 + 500 # hydraiulic fluid, engine oil, unusable fuel
+
     W_engines = N_en * W_en
+
+
     
     # Ordered subsystem names and current-iteration values (list approach)
 
@@ -211,7 +218,10 @@ def getClassIIWeightEstimation(
         W_airConditioning,
         W_antiIce,
         W_handling_gear,
-        W_engines
+        W_engines,
+        W_cabinFurnishings,
+        W_lavatoriesGalleys,
+        W_minimumFluids
     ]
     subsystem_names = [
                 "Wing",
@@ -234,7 +244,10 @@ def getClassIIWeightEstimation(
                 "Air Conditioning",
                 "Anti-Ice",
                 "Handling Gear",
-                "Engines"
+                "Engines",
+                "Cabin Furnishings",
+                "Lavatories and Galleys",
+                "Minimum Fluids"
     ]
     for i in range(len(subsystem_names)):
         print(subsystem_names[i], "Weight:", subsystem_values[i], " lb")
@@ -280,6 +293,9 @@ def plotWeightBreakdown(subsystem_names, subsystem_values):
                 "Anti-Ice",
                 "Handling Gear",
                 "Engines"
+                "Cabin Furnishings",
+                "Lavatories and Galleys",
+                "Minimum Fluids"
     ]
     #Create a bar chart to visualize the weight breakdown
     plt.figure(figsize=(12, 6))
@@ -292,13 +308,22 @@ def plotWeightBreakdown(subsystem_names, subsystem_values):
     plt.show()
     
 
+def getClassIIFigure():
+    pass
+
 
 def getClassIMTOW(LiftDragRatio, OEM_kg):
+    bypassRatio = 6.0 # PW2040D value
+    TSFC = 22*bypassRatio**(-0.19)
+    e_f = 4.4*10**1 # J/kg
+    eta_jet = prm.V_cruise/(TSFC*e_f)
+    print(eta_jet)
+
     equivalentRange_lst = [11867, 14147, 15177] #[km]
     payload_lst = [18960, 8531, 0]
     MTOW_lst = [] 
     for i in range(3):
-        flightMassFraction = np.exp(equivalentRange_lst[i]*1000/(0.7*LiftDragRatio*(4.4*10**7/9.81)))
+        flightMassFraction = np.exp(equivalentRange_lst[i]*1000/(eta_jet*LiftDragRatio*(4.4*10**7/9.81)))
         print("For a range of", equivalentRange_lst[i], "km, the flight mass fraction is:", flightMassFraction)
         MTOW = (OEM_kg+payload_lst[i])*flightMassFraction
 
@@ -306,3 +331,4 @@ def getClassIMTOW(LiftDragRatio, OEM_kg):
     MTOW = max(MTOW_lst)
     return MTOW
 
+getClassIMTOW(LiftDragRatio=1, OEM_kg=1)

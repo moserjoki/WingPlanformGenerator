@@ -3,64 +3,6 @@ import numpy as np
 import params as prm
 import matplotlib.pyplot as plt
 
-### Constant parameters ###
-A_h = prm.empg_AR_h       # ???? Horizontal tail Aspect ratio, [-]
-A_v = prm.empg_AR_v     # Vertical Tail Aspect ratio, [-]
-
-D = 13.559        # fuselage structural depth, [ft]
-L = 145.906329    # fuselage structural length (excludes radome, tail cap), [ft]
-
-K_door = 1.06   # For one side cargo door
-K_Lg = 1.0      #1.12 if fuselage-mounted main landing gear; =1.0 otherwise
-K_ng = 1.017        # for pylon-mounted nacelle
-K_np, K_mp = 1.0, 1.0      #1.126 for kneeling gear; =1.0 otherwise
-K_p = 1.0       # 1.4 for engine with propeller
-K_r = 1.0       # 1.133 for reciprocating engine 
-K_tp = 1.0      # 0.793 if turboprop
-K_tr = 1.18     # 1.18 for engine with thrust reverser, 1.0 otherwise
-K_uht = 1.0 # 1.143 for unit (all-moving) horizontal tail; 1.0 otherwise
-H_t_over_H_v = 0        #0.0 for conventional tail, [-]
-N_c = 11      # number of crew, [-]
-N_en = 2         # number of engines, [-]
-N_f = 7     # number of functions performed by controls (typically 4-7)
-N_l =  1.8     # ultimate landing load factor; =N_gear*1.5 [-]
-# estimated based on Comet and EASA
-N_Lt = 11.7833333     # nacelle length, [ft]
-#The documentation provides flange to flange length as 141.4 inches = 11.7833333 ft
-#https://prd-sc102-cdn.rtx.com/-/media/pw/products/commercial-jet-engines/pw2000/files/ce_pw2000_fact.pdf?rev=-1&hash=3E2400E9D1BAA5B7B22E700214321D31 
-
-N_mss = 2    # number of main gear shock struts, [-]
-N_m = 0     # number of mechanical functions (typically 0-2)
-N_mw = 4     # number of main wheels, [-]
-N_nw = 2     # number of nose wheels, [-]
-N_p = 188 + N_c      # number of personnel onboard (crew and passagers)
-
-N_t =  4     # number of fuel tanks, [-]
-#one in each wing and one inside the fuselage
-
-N_w = 6.54166667      # nacelle width, [ft]
-#The documentation provides fan tip diameter as 78.5 inches = 6.541667 feet
-#https://prd-sc102-cdn.rtx.com/-/media/pw/products/commercial-jet-engines/pw2000/files/ce_pw2000_fact.pdf?rev=-1&hash=3E2400E9D1BAA5B7B22E700214321D31
-
-
-S_n = 242.162246       # nacelle wetted area, [ft^2]
-#Assumed surface area of a cylinder with length N_Lt and diameter N_w therefore wetted surface area is given by 2 pi r h
-
-R_kva = 55  # system electrocal rating, typical values for cargo aircrafts
-t_c_root = 0.122     # based on chosen airfoil
-
-V_p = 0     # self-sealing "protected" tanks volume, [gal], apparently only military aircraft
-W_APUUninstalled = 280 # [lb]
-# Honeywell HGT1700, APU used in Airbus A350
-W_c = 8289.38106     # Maximum cargo weight, [lb]
-#The average mass per passenger including luggage was given as 98.8kg, I assumed 20kg of it to be the luggage(cargo) mass per passenger
-#Therefore total maximum cargo weight is 188 * 20kg = 8289lbs
-W_en = 7299.946425     # engine weight, each, [lb]
-
-W_uav = 1200    # uninstalled avionics weight, [lb]
-
-
-
 def getClassIIWeightEstimation(
         aspectRatio,
         sweepWings,
@@ -82,6 +24,63 @@ def getClassIIWeightEstimation(
 
         MTOW_initial_SI
         ):
+    ### Constant parameters ###
+    A_h = prm.empg_AR_h       # ???? Horizontal tail Aspect ratio, [-]
+    A_v = prm.empg_AR_v     # Vertical Tail Aspect ratio, [-]
+
+    D = 13.559        # fuselage structural depth, [ft]
+    L = 145.906329    # fuselage structural length (excludes radome, tail cap), [ft]
+
+    K_door = 1.06   # For one side cargo door
+    K_Lg = 1.0      #1.12 if fuselage-mounted main landing gear; =1.0 otherwise
+    K_ng = 1.017        # for pylon-mounted nacelle
+    K_np, K_mp = 1.0, 1.0      #1.126 for kneeling gear; =1.0 otherwise
+    K_p = 1.0       # 1.4 for engine with propeller
+    K_r = 1.0       # 1.133 for reciprocating engine 
+    K_tp = 1.0      # 0.793 if turboprop
+    K_tr = 1.18     # 1.18 for engine with thrust reverser, 1.0 otherwise
+    K_uht = 1.0 # 1.143 for unit (all-moving) horizontal tail; 1.0 otherwise
+    H_t_over_H_v = 0        #0.0 for conventional tail, [-]
+    N_c = 11      # number of crew, [-]
+    N_en = 2         # number of engines, [-]
+    N_f = 7     # number of functions performed by controls (typically 4-7)
+    N_l =  1.8     # ultimate landing load factor; =N_gear*1.5 [-]
+    # estimated based on Comet and EASA
+    N_Lt = 11.7833333     # nacelle length, [ft]
+    #The documentation provides flange to flange length as 141.4 inches = 11.7833333 ft
+    #https://prd-sc102-cdn.rtx.com/-/media/pw/products/commercial-jet-engines/pw2000/files/ce_pw2000_fact.pdf?rev=-1&hash=3E2400E9D1BAA5B7B22E700214321D31 
+
+    N_mss = 2    # number of main gear shock struts, [-]
+    N_m = 0     # number of mechanical functions (typically 0-2)
+    N_mw = 4     # number of main wheels, [-]
+    N_nw = 2     # number of nose wheels, [-]
+    N_p = 188 + N_c      # number of personnel onboard (crew and passagers)
+
+    N_t =  4     # number of fuel tanks, [-]
+    #one in each wing and one inside the fuselage
+
+    N_w = 6.54166667      # nacelle width, [ft]
+    #The documentation provides fan tip diameter as 78.5 inches = 6.541667 feet
+    #https://prd-sc102-cdn.rtx.com/-/media/pw/products/commercial-jet-engines/pw2000/files/ce_pw2000_fact.pdf?rev=-1&hash=3E2400E9D1BAA5B7B22E700214321D31
+
+
+    S_n = 242.162246       # nacelle wetted area, [ft^2]
+    #Assumed surface area of a cylinder with length N_Lt and diameter N_w therefore wetted surface area is given by 2 pi r h
+
+    R_kva = 55  # system electrocal rating, typical values for cargo aircrafts
+    t_c_root = 0.122     # based on chosen airfoil
+
+    V_p = 0     # self-sealing "protected" tanks volume, [gal], apparently only military aircraft
+    W_APUUninstalled = 280 # [lb]
+    # Honeywell HGT1700, APU used in Airbus A350
+    W_c = 8289.38106     # Maximum cargo weight, [lb]
+    #The average mass per passenger including luggage was given as 98.8kg, I assumed 20kg of it to be the luggage(cargo) mass per passenger
+    #Therefore total maximum cargo weight is 188 * 20kg = 8289lbs
+    W_en = 7300     # engine weight, each, [lb]
+
+    W_uav = 1200    # uninstalled avionics weight, [lb]
+
+
 ### Input parameters ###
     fuel_volume_initial_SI = (MTOW_initial_SI/1.459328551*0.459328551)/800
     A=  aspectRatio  # aspect ratio [-]

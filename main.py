@@ -359,7 +359,7 @@ for j in range(6):
     
     m_OEW = sum(subsystem_values)*0.453592
     m_payload = 18960 # [kg]
-    m_MTOW = getClassIMTOW(LiftDragRatio=17, OEM_kg=m_OEW)
+    m_MTOW = getClassIMTOW(LiftDragRatio=15, OEM_kg=m_OEW)
     m_fuel = m_MTOW - m_OEW - m_payload
     V_fuel = m_fuel/800 # 800 → density kerosin [m^3]
 

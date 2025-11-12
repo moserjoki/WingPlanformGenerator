@@ -444,6 +444,7 @@ class WingSizing:
             print(f"AR {self.AR:0.3f} <= AR_bound: {AR_bound:0.3f}")
             print(f"b: {round(self.b, 4)} m | Λ_c/4: {round(self.quart_sweep,4)} ° | Λ_LE: {round(self.leading_sweep,4)} ° | Λ: {round(self.taper_ratio,4)} |  c_r: {round(self.c_root,4)} m | c_t: {round(self.c_tip,4)} m | dihedral: {self.dihedral:0.2f} °")
             print(f"MAC: {round(self.MAC,4)} m | X_mac: {self.X_mac:0.3f} m | Y_mac: {self.Y_mac:0.3f} m")
+            print(f"Dihedral: {self.dihedral:0.3f}")
         return
 
     # ---------------------------

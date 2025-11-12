@@ -337,8 +337,7 @@ for j in range(6):
         C_L_max_take_off_cur, C_L_max_landing_cur = wing.HLD_sizing(C_L_max_clean)
     
 
-
-    X_cg_aft = 21.98 #RANDOM INITIAL VALUE
+    X_cg_aft = 20.7456 # [m] from X CG aft calculation
 
     S_v, b_v, c_r_v, c_t_v, MAC_v, Quarter_Chord_Sweep_V, S_h, b_h, c_r_h, c_t_h, MAC_h, Quarter_Chord_Sweep_H = wing.empenage_sizing(X_cg_aft, True)
 
@@ -357,20 +356,17 @@ for j in range(6):
 
     Ywings = 0.55*l_fus
     Yengine = 0.4*l_fus
-    aileronsArea_SI = 4
+    aileronsArea_SI = 4 # [m^2]
+    subsystem_values = getClassIIWeightEstimation(wing.AR, wing.quart_sweep, wing.taper_ratio, wing.b, wing.S_w, b_h, Ywings, Yengine, S_h, S_v, V_stall, aileronsArea_SI, Quarter_Chord_Sweep_H, Quarter_Chord_Sweep_V, m_MTOW)[3]
     
-    subsystem_values = getClassIIWeightEstimation(wing.AR, wing.quart_sweep, wing.taper_ratio, wing.b, wing.S_w, b_h, Ywings, Yengine, S_h, S_v, V_stall, aileronsArea_SI, Quarter_Chord_Sweep_H, Quarter_Chord_Sweep_V, m_MTOW)
-    subsystem_values_lst.append(subsystem_values)
-    m_OEW = sum(subsystem_values)*0.453592
-    m_payload = 18960 # [kg]
+    m_OEW = sum(subsystem_values)*lb_to_kg
     m_MTOW = getClassIMTOW(LiftDragRatio=15, OEM_kg=m_OEW)
     # Should be fixed
     m_fuel = m_MTOW - m_OEW - m_payload
-    V_fuel = m_fuel/800 # 800 → density kerosin [m^3]
+    V_fuel = m_fuel/ρ_kerosin
 
-    if j == 5:
-        plotWeightBreakdown(subsystem_values_lst)
-        cruise_matching_diagram.plot()
-        wing.fuel_volume(airfoil)
-        wing.plot()
-        print(f"V needed: {V_fuel}")
+
+cruise_matching_diagram.plot()
+wing.fuel_volume(airfoil)
+wing.plot()
+print(f"V needed: {V_fuel}")

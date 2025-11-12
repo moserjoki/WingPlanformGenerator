@@ -10,7 +10,7 @@ from weight import getClassIIWeightEstimation
 from weight import getClassIMTOW
 from weight import plotWeightBreakdown
 
-subsystem_values_lst = []
+
 
 def C_D0_calculate(flight_condition, gear_deployed, printing):
     # Get atmospheric properties based on flight condition
@@ -39,7 +39,7 @@ def C_D0_calculate(flight_condition, gear_deployed, printing):
         flap_deflection_deg = hld_deflection_take_off # No flap deflection in cruise
 
     # Landing gear parameters
-    CD_gear = 0.015         # Constant drag coefficient for landing gear
+    CD_gear = 0.002208       # Constant drag coefficient for landing gear
 
     # Flap parameters (slotted flaps)
     c_f = 0.8               # Chord length of flap [m]
@@ -293,6 +293,9 @@ def e_calculate(flap_angle, flaps_deflected, wing_tip_effect, plotting):
 m_MTOW = 114960 # [kg] Maximum Take Off Weight from Class I Weight Estimation
 m_MTOW_prev = m_MTOW
 percentage_MTOW = 1
+subsystem_values_lst = []
+m_MTOW_lst = []
+m_MTOW_lst.append(m_MTOW)
 
 AR = 6.9 # [] aspect ratio
 
@@ -319,7 +322,7 @@ S_w_cur = 0
 
 j=1
 # Outer loop that takes into account updated m_MTOW and updated C_D0's and e's to rerun aircraft sizing. 
-while percentage_MTOW > 0.01:
+while True:
     print("\n\n\n")
     print(f"Iteration {j+1}")
     j = j+1
@@ -350,13 +353,13 @@ while percentage_MTOW > 0.01:
     C_D0_landing_extended = C_D0_calculate('landing', True, False)
     C_D0_cruise = C_D0_calculate('cruise', False, False)
     C_D0_take_off_retracted = C_D0_calculate('take-off', False, False)
-    C_D0_take_off_extended = C_D0_calculate('landing',  True, False)
+    C_D0_take_off_extended = C_D0_calculate('take-off',  True, False)
 
     e_landing = e_calculate(hld_deflection_land, True, True, False)
     e_cruise = e_calculate(0, False, True, False)
     e_take_off = e_calculate(hld_deflection_take_off, True, True, False)
 
-    print(f"C_D0_landing_retracted: {C_D0_landing_retracted:0.3f} | C_D0_landing_extended {C_D0_landing_extended:0.3f} | C_D0_cruise: {C_D0_cruise:0.3f} | C_D0_take_off_retracted: {C_D0_take_off_retracted:0.3f} | C_D0_take_off_extended: {C_D0_take_off_extended:0.3f}")
+    print(f"C_D0_landing_retracted: {C_D0_landing_retracted:0.5f} | C_D0_landing_extended {C_D0_landing_extended:0.5f} | C_D0_cruise: {C_D0_cruise:0.5f} | C_D0_take_off_retracted: {C_D0_take_off_retracted:0.5f} | C_D0_take_off_extended: {C_D0_take_off_extended:0.5f}")
     print(f"e_landing {e_landing:0.3f} | e_cruise {e_cruise:0.3f} | e_take_off {e_take_off:0.3f}")
 
     Ywings = 0.55*l_fus
@@ -365,18 +368,34 @@ while percentage_MTOW > 0.01:
     subsystem_values = getClassIIWeightEstimation(wing.AR, wing.quart_sweep, wing.taper_ratio, wing.b, wing.S_w, b_h, Ywings, Yengine, S_h, S_v, V_stall, aileronsArea_SI, Quarter_Chord_Sweep_H, Quarter_Chord_Sweep_V, m_MTOW)
     subsystem_values_lst.append(subsystem_values)
     
-    m_OEW = sum(subsystem_values)*0.453592 
+    m_OEW = sum(subsystem_values)*lb_to_kg
     m_MTOW_prev = m_MTOW 
-    m_MTOW = getClassIMTOW(LiftDragRatio=15, OEM_kg=m_OEW)
+
+    # Calculate C_L design
+    C_L_des = 1.1*m_MTOW*g/((1/2)*ρ_cruise*V_cruise**2*S_w_cur)
+    print(f"C_L_des: {C_L_des:0.4f}")
+    
+    # Calculate drag at C_L design
+    k_cruise = calculate_K(AR, e_cruise)
+    C_D_cruise = C_D0_cruise + k_cruise*C_L_des**2
+    print(f"C_D0_cruise: {C_D0_cruise:0.4f}")
+    print(f"C_D_cruise: {C_D_cruise:0.4f}")
+    Lift_over_Drag = C_L_des/C_D_cruise
+    print(f"Lift over Drag ratio: {Lift_over_Drag:0.4f}")
+
+    m_MTOW = getClassIMTOW(LiftDragRatio=Lift_over_Drag, OEM_kg=m_OEW)
+    m_MTOW_lst.append(m_MTOW)
     percentage_MTOW = np.abs((m_MTOW-m_MTOW_prev)/m_MTOW_prev)
     print(f"percentage_MTOW: {percentage_MTOW}")
-    # Should be fixed
     m_fuel = m_MTOW - m_OEW - m_payload
-    V_fuel = m_fuel/ρ_kerosin   
+    V_fuel = m_fuel/ρ_kerosin
 
+    if percentage_MTOW < 0.01:
+        break
 
-plotWeightBreakdown(subsystem_values_lst)
+plotWeightBreakdown(subsystem_values_lst, m_MTOW_lst)
 cruise_matching_diagram.plot()
 wing.fuel_volume(airfoil)
 wing.plot()
 print(f"V needed: {V_fuel}")
+print(m_MTOW_lst)

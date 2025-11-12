@@ -273,7 +273,7 @@ def getClassIIWeightEstimation(
     return subsystem_values
 
 
-def plotWeightBreakdown(subsystem_values_lb):
+def plotWeightBreakdown(subsystem_values_lb, m_MTOW_lst):
     subsystem_names = [
                 "Wing",
                 "Horizontal Tail",
@@ -316,8 +316,14 @@ def plotWeightBreakdown(subsystem_values_lb):
     plt.legend()
     plt.show()
 
+
     plt.figure(figsize=(8, 8))
-    plt.(np.ara)
+    plt.plot(np.arange(1, len(m_MTOW_lst)+1), m_MTOW_lst, marker='o', color='red')
+    plt.xlabel('Iteration')
+    plt.ylabel('Total Weight (lb)')
+    plt.title('Total Aircraft Weight over Iterations')
+    plt.show()
+
     
 def getClassIMTOW(LiftDragRatio, OEM_kg):
     bypassRatio = 6.0 # PW2040D value

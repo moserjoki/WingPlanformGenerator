@@ -306,8 +306,8 @@ def plotWeightBreakdown(subsystem_values_lb):
     subsystem_values_lastIteration = subsystem_values_lb[-1]  
     #Create a bar chart to visualize the weight breakdown
     plt.figure(figsize=(12, 6))
-    plt.bar(subsystem_names, subsystem_values_firstIteration, label='First Iteration, total weight: {:.2f} lb'.format(sum(subsystem_values_firstIteration)), color='blue')
-    plt.bar(subsystem_names, subsystem_values_lastIteration, label='Last Iteration, total weight: {:.2f} lb'.format(sum(subsystem_values_lastIteration)), color='orange')
+    plt.bar(subsystem_names, subsystem_values_firstIteration, label='First Iteration, total weight: {:.2f} lb'.format(sum(subsystem_values_firstIteration)), color='red')
+    plt.bar(subsystem_names, subsystem_values_lastIteration, label='Last Iteration, total weight: {:.2f} lb'.format(sum(subsystem_values_lastIteration)), color='green', alpha=0.7)
     plt.xlabel('Subsystems')
     plt.ylabel('Weight (lb)')
     plt.title('Aircraft Weight Breakdown by Subsystem')
@@ -315,6 +315,8 @@ def plotWeightBreakdown(subsystem_values_lb):
     plt.tight_layout()
     plt.legend()
     plt.show()
+
+    plt.erase()
     
 def getClassIMTOW(LiftDragRatio, OEM_kg):
     bypassRatio = 6.0 # PW2040D value

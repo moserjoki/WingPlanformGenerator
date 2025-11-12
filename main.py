@@ -290,7 +290,10 @@ def e_calculate(flap_angle, flaps_deflected, wing_tip_effect, plotting):
     return e_factor
 
 
-m_MTOW = 114960 # [kg] Maximum Take Off Weight from Class I Weight Estimation . 
+m_MTOW = 114960 # [kg] Maximum Take Off Weight from Class I Weight Estimation
+m_MTOW_prev = m_MTOW
+percentage_MTOW = 1
+
 AR = 6.9 # [] aspect ratio
 
 # Create objects used for subsequent calculations
@@ -314,10 +317,12 @@ e_take_off = 0.695
 
 S_w_cur = 0
 
+j=1
 # Outer loop that takes into account updated m_MTOW and updated C_D0's and e's to rerun aircraft sizing. 
-for j in range(6):
+while percentage_MTOW > 0.01:
     print("\n\n\n")
     print(f"Iteration {j+1}")
+    j = j+1
     print(f"with m_MTOW: {m_MTOW:03f}")
     wing.update(m_MTOW, AR)
     cruise_matching_diagram.update(m_MTOW, AR)
@@ -357,15 +362,20 @@ for j in range(6):
     Ywings = 0.55*l_fus
     Yengine = 0.4*l_fus
     aileronsArea_SI = 4 # [m^2]
-    subsystem_values = getClassIIWeightEstimation(wing.AR, wing.quart_sweep, wing.taper_ratio, wing.b, wing.S_w, b_h, Ywings, Yengine, S_h, S_v, V_stall, aileronsArea_SI, Quarter_Chord_Sweep_H, Quarter_Chord_Sweep_V, m_MTOW)[3]
+    subsystem_values = getClassIIWeightEstimation(wing.AR, wing.quart_sweep, wing.taper_ratio, wing.b, wing.S_w, b_h, Ywings, Yengine, S_h, S_v, V_stall, aileronsArea_SI, Quarter_Chord_Sweep_H, Quarter_Chord_Sweep_V, m_MTOW)
+    subsystem_values_lst.append(subsystem_values)
     
-    m_OEW = sum(subsystem_values)*lb_to_kg
+    m_OEW = sum(subsystem_values)*0.453592 
+    m_MTOW_prev = m_MTOW 
     m_MTOW = getClassIMTOW(LiftDragRatio=15, OEM_kg=m_OEW)
+    percentage_MTOW = np.abs((m_MTOW-m_MTOW_prev)/m_MTOW_prev)
+    print(f"percentage_MTOW: {percentage_MTOW}")
     # Should be fixed
     m_fuel = m_MTOW - m_OEW - m_payload
-    V_fuel = m_fuel/ρ_kerosin
+    V_fuel = m_fuel/ρ_kerosin   
 
 
+plotWeightBreakdown(subsystem_values_lst)
 cruise_matching_diagram.plot()
 wing.fuel_volume(airfoil)
 wing.plot()

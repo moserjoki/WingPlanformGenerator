@@ -8,6 +8,9 @@ from sizing import *
 from drag import *
 from weight import getClassIIWeightEstimation
 from weight import getClassIMTOW
+from weight import plotWeightBreakdown
+
+subsystem_values_lst = []
 
 def C_D0_calculate(flight_condition, gear_deployed, printing):
     # Get atmospheric properties based on flight condition
@@ -355,8 +358,9 @@ for j in range(6):
     Ywings = 0.55*l_fus
     Yengine = 0.4*l_fus
     aileronsArea_SI = 4
-    subsystem_values = getClassIIWeightEstimation(wing.AR, wing.quart_sweep, wing.taper_ratio, wing.b, wing.S_w, b_h, Ywings, Yengine, S_h, S_v, V_stall, aileronsArea_SI, Quarter_Chord_Sweep_H, Quarter_Chord_Sweep_V, m_MTOW)[3]
     
+    subsystem_values = getClassIIWeightEstimation(wing.AR, wing.quart_sweep, wing.taper_ratio, wing.b, wing.S_w, b_h, Ywings, Yengine, S_h, S_v, V_stall, aileronsArea_SI, Quarter_Chord_Sweep_H, Quarter_Chord_Sweep_V, m_MTOW)
+    subsystem_values_lst.append(subsystem_values)
     m_OEW = sum(subsystem_values)*0.453592
     m_payload = 18960 # [kg]
     m_MTOW = getClassIMTOW(LiftDragRatio=15, OEM_kg=m_OEW)
@@ -365,6 +369,7 @@ for j in range(6):
     V_fuel = m_fuel/800 # 800 → density kerosin [m^3]
 
     if j == 5:
+        plotWeightBreakdown(subsystem_values_lst)
         cruise_matching_diagram.plot()
         wing.fuel_volume(airfoil)
         wing.plot()

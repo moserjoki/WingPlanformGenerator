@@ -192,7 +192,8 @@ def getClassIIWeightEstimation(
     W_minimumFluids = 300 + 600 + 500 # hydraiulic fluid, engine oil, unusable fuel
 
     W_engines = N_en * W_en
-
+    
+    W_misc = 0.03 * W_dg  # paint, insulation, etc.
 
     
     # Ordered subsystem names and current-iteration values (list approach)
@@ -221,7 +222,8 @@ def getClassIIWeightEstimation(
         W_engines,
         W_cabinFurnishings,
         W_lavatoriesGalleys,
-        W_minimumFluids
+        W_minimumFluids,
+        W_misc
     ]
     subsystem_names = [
                 "Wing",
@@ -247,7 +249,8 @@ def getClassIIWeightEstimation(
                 "Engines",
                 "Cabin Furnishings",
                 "Lavatories and Galleys",
-                "Minimum Fluids"
+                "Minimum Fluids",
+                "Misc. (paint, insulation, etc.)"
     ]
     for i in range(len(subsystem_names)):
         print(subsystem_names[i], "Weight:", subsystem_values[i], " lb")
@@ -258,19 +261,19 @@ def getClassIIWeightEstimation(
     fuel_mass_SI = MTOW_SI - OEM_SI - 18960 
 
     #Create a bar chart to visualize the weight breakdown
-    plt.figure(figsize=(12, 6))
-    plt.bar(subsystem_names, subsystem_values)
-    plt.xlabel('Subsystems')
-    plt.ylabel('Weight (lb)')
-    plt.title('Aircraft Weight Breakdown by Subsystem')
-    plt.xticks(rotation=45, ha='right')
-    plt.tight_layout()
-    plt.show()
+    #plt.figure(figsize=(12, 6))
+    #plt.bar(subsystem_names, subsystem_values)
+    #plt.xlabel('Subsystems')
+    #plt.ylabel('Weight (lb)')
+    #plt.title('Aircraft Weight Breakdown by Subsystem')
+    #plt.xticks(rotation=45, ha='right')
+    #plt.tight_layout()
+    #plt.show()
     
-    return OEM_SI, MTOW_SI, fuel_mass_SI, subsystem_values
+    return subsystem_values
 
 
-def plotWeightBreakdown(subsystem_names, subsystem_values):
+def plotWeightBreakdown(subsystem_values_lb):
     subsystem_names = [
                 "Wing",
                 "Horizontal Tail",
@@ -292,26 +295,27 @@ def plotWeightBreakdown(subsystem_names, subsystem_values):
                 "Air Conditioning",
                 "Anti-Ice",
                 "Handling Gear",
-                "Engines"
+                "Engines",
                 "Cabin Furnishings",
                 "Lavatories and Galleys",
-                "Minimum Fluids"
+                "Minimum Fluids",
+                "Misc. (paint, insulation, etc.)"
     ]
+
+    subsystem_values_firstIteration = subsystem_values_lb[0]
+    subsystem_values_lastIteration = subsystem_values_lb[-1]  
     #Create a bar chart to visualize the weight breakdown
     plt.figure(figsize=(12, 6))
-    plt.bar(subsystem_names, subsystem_values)
+    plt.bar(subsystem_names, subsystem_values_firstIteration, label='First Iteration, total weight: {:.2f} lb'.format(sum(subsystem_values_firstIteration)), color='blue')
+    plt.bar(subsystem_names, subsystem_values_lastIteration, label='Last Iteration, total weight: {:.2f} lb'.format(sum(subsystem_values_lastIteration)), color='orange')
     plt.xlabel('Subsystems')
     plt.ylabel('Weight (lb)')
     plt.title('Aircraft Weight Breakdown by Subsystem')
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
+    plt.legend()
     plt.show()
     
-
-def getClassIIFigure():
-    pass
-
-
 def getClassIMTOW(LiftDragRatio, OEM_kg):
     bypassRatio = 6.0 # PW2040D value
     TSFC = 22*bypassRatio**(-0.19)

@@ -305,23 +305,31 @@ def plotWeightBreakdown(subsystem_values_lb, m_MTOW_lst):
     subsystem_values_firstIteration = subsystem_values_lb[0]
     subsystem_values_lastIteration = subsystem_values_lb[-1]  
     #Create a bar chart to visualize the weight breakdown
-    plt.figure(figsize=(12, 6))
-    plt.bar(subsystem_names, subsystem_values_firstIteration, label='First Iteration, total weight: {:.2f} lb'.format(sum(subsystem_values_firstIteration)), color='red')
-    plt.bar(subsystem_names, subsystem_values_lastIteration, label='Last Iteration, total weight: {:.2f} lb'.format(sum(subsystem_values_lastIteration)), color='green', alpha=0.7)
-    plt.xlabel('Subsystems')
-    plt.ylabel('Weight (lb)')
-    plt.title('Aircraft Weight Breakdown by Subsystem')
-    plt.xticks(rotation=45, ha='right')
+    fig, (ax0, ax1) = plt.subplots(ncols=2, figsize=(15, 6),
+                                   gridspec_kw={'width_ratios': [10, 5]})
+    x = np.arange(len(subsystem_names))
+    width = 0.35
+
+    ax0.bar(x - width/2, subsystem_values_firstIteration, width,
+            label='First Iteration, total weight: {:.2f} lb'.format(sum(subsystem_values_firstIteration)),
+            color='red')
+    ax0.bar(x + width/2, subsystem_values_lastIteration, width,
+            label='Last Iteration, total weight: {:.2f} lb'.format(sum(subsystem_values_lastIteration)),
+            color='green', alpha=0.7)
+    ax0.set_xlabel('Subsystems')
+    ax0.set_ylabel('Weight (lb)')
+    ax0.set_title('Aircraft Weight Breakdown by Subsystem')
+    ax0.set_xticks(x)
+    ax0.set_xticklabels(subsystem_names, rotation=45, ha='right')
+    ax0.legend()
+
+    ax1.plot(np.arange(1, len(m_MTOW_lst) + 1), m_MTOW_lst, marker='o', color='red')
+    ax1.set_xlabel('Iteration')
+    ax1.set_ylabel('Total Weight (lb)')
+    ax1.set_title('Total Aircraft Weight over Iterations')
+    ax1.grid(True)
+
     plt.tight_layout()
-    plt.legend()
-    plt.show()
-
-
-    plt.figure(figsize=(8, 8))
-    plt.plot(np.arange(1, len(m_MTOW_lst)+1), m_MTOW_lst, marker='o', color='red')
-    plt.xlabel('Iteration')
-    plt.ylabel('Total Weight (lb)')
-    plt.title('Total Aircraft Weight over Iterations')
     plt.show()
 
     

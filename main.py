@@ -395,12 +395,13 @@ while True:
     print(f"m_fuel: {m_fuel}")
     V_fuel = m_fuel/ρ_kerosin
 
+    wing.fuel_volume(airfoil)
+    wing.plot()
+    print(f"V needed: {V_fuel}")
+    print(m_MTOW_lst)
+
     if percentage_MTOW < 0.0005:
         break
 
 plotWeightBreakdown(subsystem_values_lst, m_MTOW_lst)
 cruise_matching_diagram.plot()
-wing.fuel_volume(airfoil)
-wing.plot()
-print(f"V needed: {V_fuel}")
-print(m_MTOW_lst)

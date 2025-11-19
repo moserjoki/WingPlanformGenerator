@@ -658,7 +658,7 @@ class WingSizing:
 
         V_fuel_half_wing = V_available_volume - V_landing_gear 
         V_fuel_total_wing = 2*V_fuel_half_wing
-
+        
         print(f"Cross Section: {S_ref_chord}")
         print(f"Volume: {V_fuel_total_wing} m^3")
         return
